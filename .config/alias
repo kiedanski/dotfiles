@@ -1,0 +1,56 @@
+# General alias
+
+$ISLINUX && alias ls="ls --color=auto"
+$ISMAC && alias ls="ls -G"
+alias l="ls -lah"
+
+# Grep
+alias grep="grep --color=auto"
+
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+
+# Git
+alias gs="git status"
+alias git-tree="git log --graph --abbrev-commit --pretty=oneline"
+
+alias g="git"
+__git_complete g __git_main
+
+alias go="git checkout"
+__git_complete go _git_checkout
+
+alias gp="git push"
+__git_complete gp _git_push
+
+# Neovim
+alias v="nvim"
+alias vim="nvim"
+
+alias Rz="source ~/.zshrc"
+alias tmux="tmux -f ${HOME}/.config/tmux/tmux.conf"
+
+# Python
+alias S="source .venv/bin/activate"
+alias D="deactivate"
+
+# Docker
+alias docker-rm-all='docker ps -a | awk "{print \$1}" | xargs docker rm -f'
+
+# Ctags mac
+$ISMAC && alias ctags="`brew --prefix`/bin/ctags"
+
+# Tree
+alias tree="tree -I '__pycache__'"
+
+# aws
+alias aws="docker run --rm -it -v ~/.aws:/root/.aws amazon/aws-cli"
+
+# Poetry
+alias poe="python -m poetry run"
+alias pos="poetry shell"
+
+# Dotfiles repo
+alias dotfiles='/usr/bin/git --git-dir=$HOME/.cfg/ --work-tree=$HOME'
+
