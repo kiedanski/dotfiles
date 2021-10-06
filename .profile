@@ -45,7 +45,7 @@ fi
 LS_COLORS=$LS_COLORS:'di=0;35:'
 export LS_COLORS
 
+export VIMINIT='let $MYVIMRC="$XDG_CONFIG_HOME/vim/vimrc" | source $MYVIMRC'
 
 # Source bash
 source "$XDG_CONFIG_HOME/bash/bashrc"
-
