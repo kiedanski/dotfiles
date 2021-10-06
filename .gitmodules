@@ -1,0 +1,15 @@
+[submodule ".config/vim/pack/plugins/start/vim-commentary.vim"]
+	path = .config/vim/pack/plugins/start/vim-commentary.vim
+	url = https://github.com/tpope/vim-commentary.git
+[submodule ".vim/pack/plugins/commentary"]
+	path = .vim/pack/plugins/commentary
+	url = https://tpope.io/vim/commentary.git
+[submodule ".vim/pack/plugins/start/commentary"]
+	path = .vim/pack/plugins/start/commentary
+	url = https://tpope.io/vim/commentary.git
+[submodule ".vim/pack/plugins/start/vim-commentary"]
+	path = .vim/pack/plugins/start/vim-commentary
+	url = https://tpope.io/vim/commentary.git
+[submodule ".vim/pack/plugins/start/vim-tmux-navigator.vim"]
+	path = .vim/pack/plugins/start/vim-tmux-navigator.vim
+	url = git@github.com:christoomey/vim-tmux-navigator.git
