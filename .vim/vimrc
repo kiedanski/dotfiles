@@ -21,4 +21,19 @@ setl wildignore=**/node_modules/**,**/dist/**,*.pyc
 set noswapfile                    " Disables swapfiles
 set tags=./tags;,tags;            " Find tags relative to current file and directory
 set undofile
+set number relativenumber
 " }}}
+"
+"
+let g:slime_target = "tmux"
+
+set completeopt+=noinsert
+
+" Clipboard
+set clipboard+=unnamedplus
+
+""  Mappings
+nnoremap j gj
+nnoremap k gk
+vnoremap j gj
+vnoremap k gk
