@@ -25,7 +25,6 @@ set number relativenumber
 " }}}
 "
 "
-let g:slime_target = "tmux"
 
 set completeopt+=noinsert
 
@@ -37,3 +36,9 @@ nnoremap j gj
 nnoremap k gk
 vnoremap j gj
 vnoremap k gk
+
+
+" Vim Slime config
+let g:slime_target = "tmux"
+let g:slime_python_ipython = 1
+

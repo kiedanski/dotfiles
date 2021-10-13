@@ -6,9 +6,8 @@ set autoindent
 set smartindent
 set colorcolumn=80
 setlocal path=.,**
-setlocal include=^\\s*\\(from\\\|import\\)\\s*\\zs\\(\\S\\+\\s\\{-}\\)*\\ze\\($\\\|\ as\\)
-setlocal define=^\\s*\\\\(def\\\|class\\)\\>
-setlocal includeexpr=PyInclude(v:fname)
+setlocal include=^\\s*\\(from\\\|import\\)\\s*\\zs\\(\\S\\+\\s\\{-}\\)*\\ze\\($\\\|\ as\\\|\ import\\)
+setlocal define=^\\s*\\<\\(def\\\|class\\)\\>
 
 function! PyInclude(fname)
   let parts = split(a:fname, ' import ')
@@ -21,5 +20,7 @@ function! PyInclude(fname)
 	if len(found)
 	  return found
 	endif
+  endif
   return substitute(l, '\.', '/', 'g') . '.py'
 endfunction
+setlocal includeexpr=PyInclude(v:fname)
