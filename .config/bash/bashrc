@@ -2,8 +2,15 @@ source_if_exists () {
 	[[ -f "$1" ]] && source "$1"
 }
 
+program_exists () {
+        if ! type "$1" > /dev/null; then
+          shift 
+          $@
+        fi
+}
 
-source_if_exists "$(brew --prefix)/etc/profile.d/bash_completion.sh"
+
+program_exists brew source_if_exists "$(brew --prefix)/etc/profile.d/bash_completion.sh"
 source_if_exists "$XDG_CONFIG_HOME/functions/docker-functions"
 source_if_exists "$XDG_CONFIG_HOME/bash/git-completion.bash"
 source_if_exists "$XDG_CONFIG_HOME/alias"
