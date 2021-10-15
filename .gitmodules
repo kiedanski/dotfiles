@@ -12,7 +12,7 @@
 	url = https://tpope.io/vim/commentary.git
 [submodule ".vim/pack/plugins/start/vim-tmux-navigator.vim"]
 	path = .vim/pack/plugins/start/vim-tmux-navigator.vim
-	url = git@github.com:christoomey/vim-tmux-navigator.git
+	url = https@github.com:christoomey/vim-tmux-navigator.git
 [submodule ".vim/pack/plugins/start/vim-slime.vim"]
 	path = .vim/pack/plugins/start/vim-slime.vim
 	url = https://github.com/jpalardy/vim-slime.git
