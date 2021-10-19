@@ -24,3 +24,6 @@ function! PyInclude(fname)
   return substitute(l, '\.', '/', 'g') . '.py'
 endfunction
 setlocal includeexpr=PyInclude(v:fname)
+
+
+nnoremap <leader>x :vimgrep // **/*.py<left><left><left><left><left><left><left><left><left>
