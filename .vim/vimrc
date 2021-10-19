@@ -42,3 +42,7 @@ vnoremap k gk
 let g:slime_target = "tmux"
 let g:slime_python_ipython = 1
 
+" Markdown syntax
+autocmd BufNewFile,BufFilePre,BufRead *.md set filetype=markdown.pandoc
+let g:markdown_folding = 1
+
