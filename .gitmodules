@@ -16,3 +16,9 @@
 [submodule ".vim/pack/plugins/start/vim-slime.vim"]
 	path = .vim/pack/plugins/start/vim-slime.vim
 	url = https://github.com/jpalardy/vim-slime.git
+[submodule ".vim/pack/plugins/start/vim-fugitive"]
+	path = .vim/pack/plugins/start/vim-fugitive
+	url = https://tpope.io/vim/fugitive.git
+[submodule ".vim/pack/plugins/start/vim-unimpaired"]
+	path = .vim/pack/plugins/start/vim-unimpaired
+	url = https://tpope.io/vim/unimpaired.git
