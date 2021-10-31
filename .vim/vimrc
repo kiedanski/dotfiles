@@ -46,3 +46,9 @@ let g:slime_python_ipython = 1
 autocmd BufNewFile,BufFilePre,BufRead *.md set filetype=markdown.pandoc
 let g:markdown_folding = 1
 
+" Useful general mappings
+nnoremap <leader>a :argadd <c-r>=fnameescape(expand('%:p:h'))<cr>/**/*.
+nnoremap <leader>g :vimgrep //j ##<left><left><left><left><left>
+
+
+

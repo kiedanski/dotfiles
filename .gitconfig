@@ -1,0 +1,6 @@
+# This is Git's per-user configuration file.
+[user]
+name = Diego Kiedanski
+email = dkiedanski@tryolabs.com 
+[core]
+	editor = vim
