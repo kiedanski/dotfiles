@@ -32,4 +32,5 @@ function! PyInclude(fname)
 endfunction
 setlocal includeexpr=PyInclude(v:fname)
 
+nnoremap <leader>x :vimgrep // **/*.py<left><left><left><left><left><left><left><left><left>
 nnoremap <leader>a :argadd <c-r>=fnameescape(expand('%:p:h'))<cr>/**/*.py<C-d>
