@@ -57,3 +57,5 @@ alias dotfiles='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
 
 # Markdown slides
 alias compile-slide='docker run -v "${PWD}/:/content/" danski3456/markdown-slides:latest'
+
+alias down="sudo shutdown -h now"

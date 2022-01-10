@@ -50,5 +50,6 @@ let g:markdown_folding = 1
 nnoremap <leader>a :argadd <c-r>=fnameescape(expand('%:p:h'))<cr>/**/*.
 nnoremap <leader>g :vimgrep //j ##<left><left><left><left><left>
 
+nnoremap <leader>m :silent make\|redraw!\|:copen<cr>
 
 

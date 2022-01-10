@@ -6,6 +6,13 @@ set autoindent
 set smartindent
 set colorcolumn=80
 setlocal path=.,**
+
+if executable("flake8")
+  " compiler flake8
+  set makeprg=flake8\ %:S
+  setlocal errorformat=%f:%l:%c:\ %t%n\ %m
+endif
+
 setlocal include=^\\s*\\(from\\\|import\\)\\s*\\zs\\(\\S\\+\\s\\{-}\\)*\\ze\\($\\\|\ as\\\|\ import\\)
 setlocal define=^\\s*\\<\\(def\\\|class\\)\\>
 
