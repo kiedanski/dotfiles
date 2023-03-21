@@ -1,0 +1,15 @@
+[submodule ".config/zsh/plugins/fast-syntax-highlighting"]
+	path = .config/zsh/plugins/fast-syntax-highlighting
+	url = git@github.com:zdharma-zmirror/fast-syntax-highlighting.git
+[submodule ".config/zsh/plugins/zsh-autosuggestions"]
+	path = .config/zsh/plugins/zsh-autosuggestions
+	url = git@github.com:zsh-users/zsh-autosuggestions.git
+[submodule ".config/zsh/plugins/zsh-completions"]
+	path = .config/zsh/plugins/zsh-completions
+	url = git@github.com:zsh-users/zsh-completions.git
+[submodule ".config/zsh/plugins/zsh-vi-mode"]
+	path = .config/zsh/plugins/zsh-vi-mode
+	url = https://github.com/jeffreytse/zsh-vi-mode
+[submodule ".config/tmux/plugins/tpm"]
+	path = .config/tmux/plugins/tpm
+	url = https://github.com/tmux-plugins/tpm
