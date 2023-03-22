@@ -12,6 +12,7 @@ export ZSH_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ohmyzsh"
 export ZSH_COMPDUMP="$ZSH_CACHE_DIR/.zcompdump"
 
 
+export HISTFILE="$XDG_STATE_HOME"/zsh/history
 
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time oh-my-zsh is loaded, in which case,
