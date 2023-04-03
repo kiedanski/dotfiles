@@ -1,7 +1,6 @@
 require "plugins"
 require "lsp"
 require "autocomplete"
-require "user.keybinds"
 
 
 vim.g.slime_target = "tmux"
