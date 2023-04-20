@@ -16,6 +16,8 @@ return require('packer').startup(function(use)
   use { 'embark-theme/vim', as = 'embark' } -- colorscheme
   use 'neovim/nvim-lspconfig' -- Configurations for Nvim LSP
 
+  use 'tpope/vim-commentary' -- comments
+
   -- configurations for autocompletition
   use 'hrsh7th/nvim-cmp' -- Autocompletion plugin
   use 'hrsh7th/cmp-nvim-lsp' -- LSP source for nvim-cmp
