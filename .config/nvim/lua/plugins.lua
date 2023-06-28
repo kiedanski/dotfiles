@@ -25,6 +25,23 @@ return require('packer').startup(function(use)
   use 'L3MON4D3/LuaSnip' -- Snippets plugin
 
   use 'jpalardy/vim-slime' -- Send code to REPL
+
+  use {
+  "kevinhwang91/nvim-ufo",
+  opt = true,
+  event = { "BufReadPre" },
+  wants = { "promise-async" },
+  requires = "kevinhwang91/promise-async",
+  config = function()
+    require("ufo").setup {
+      provider_selector = function(bufnr, filetype)
+        return { "lsp", "treesitter", "indent" }
+      end,
+    }
+    vim.keymap.set("n", "zR", require("ufo").openAllFolds)
+    vim.keymap.set("n", "zM", require("ufo").closeAllFolds)
+  end,
+  }
  
   -- Automatically set up your configuration after cloning packer.nvim
   -- Put this at the end after all plugins
