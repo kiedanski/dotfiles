@@ -8,6 +8,7 @@ set.softtabstop = 4
 set.shiftwidth = 4
 set.expandtab = true
 
+vim.g.slime_target = "tmux"
 vim.g.slime_python_ipython = true
 
 -- require'lspconfig'.pyright.setup{}
