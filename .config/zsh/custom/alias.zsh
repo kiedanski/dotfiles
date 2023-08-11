@@ -12,3 +12,5 @@ function bash_help_chatgpt() {
   chatblade -c 4 -e -p bashhelp "$1" | xargs -I{} echo {} | pbcopy
 }
 alias bhp=bash_help_chatgpt
+
+alias S="source .venv/bin/activate"
