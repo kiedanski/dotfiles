@@ -5,7 +5,7 @@ command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
 
 
-
+export EDITOR=nvim
 
 
 # The next line updates PATH for the Google Cloud SDK.

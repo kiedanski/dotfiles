@@ -18,6 +18,8 @@ return require('packer').startup(function(use)
 
   use 'tpope/vim-commentary' -- comments
 
+  use 'junegunn/goyo.vim' -- distraction free writing
+
   -- configurations for autocompletition
   use 'hrsh7th/nvim-cmp' -- Autocompletion plugin
   use 'hrsh7th/cmp-nvim-lsp' -- LSP source for nvim-cmp
