@@ -16,5 +16,4 @@ vim.g["slime_default_config"] = {socket_name = "default", target_pane = "{last}"
 vim.cmd('highlight Folded guibg=DarkGrey guifg=White')
 
 -- Set the character used to separate folded regions
-vim.o.fillchars = 'fold:─'
 

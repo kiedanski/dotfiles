@@ -22,9 +22,10 @@ config config status.showUntrackedFiles no
 # Configuration
 
 2. Install oh-my-zsh: `git clone https://github.com/ohmyzsh/ohmyzsh.git ~/.local/share/oh-my-zsh`
-3. Install tmux plugin manager: `git clone https://github.com/tmux-plugins/tpm $XDG_DATA_HOME/tmux/plugins/tpm`
-4. Install brew: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
-5. Install tmux plugins from inside tmux: `<C-a> I`
+3. Create the folder `~/.local/share/zsh`
+4. Install tmux plugin manager: `git clone https://github.com/tmux-plugins/tpm $XDG_DATA_HOME/tmux/plugins/tpm`
+5. Install brew: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
+6. Install tmux plugins from inside tmux: `<C-a> I`
 
 
 Tools to install:
