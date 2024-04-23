@@ -21,6 +21,7 @@ config config status.showUntrackedFiles no
 
 # Configuration
 
+1. (Optional) Change the shell to ssh `chsh -s $(which zsh)`
 2. Install oh-my-zsh: `git clone https://github.com/ohmyzsh/ohmyzsh.git ~/.local/share/oh-my-zsh`
 3. Create the folder `~/.local/share/zsh`
 4. Install tmux plugin manager: `git clone https://github.com/tmux-plugins/tpm $XDG_DATA_HOME/tmux/plugins/tpm`
