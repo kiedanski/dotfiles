@@ -1,0 +1,22 @@
+# Default Server List for podget
+#
+# Default format with category and name:
+#   <url> <category> <name>
+#
+# Alternate Formats:
+#   1. With a category but no name.
+#       <url> <category>
+#   2. With a name but no category (2 ways).
+#       <url> No_Category <name>
+#       <url> . <name>
+#   3. With neither a category or name.
+#       <url>
+#
+# For additional formating documentation, please refer to 'man podget'.
+#
+#FEEDS:
+# ----------------------------------------------------------------------------------------------------------------------------------
+# Using TITLES from Feed:
+https://feeds.transistor.fm/the-indie-hackers-podcast No_Category Indie Hackers OPT_FILENAME_RENAME_TITLETAG 
+https://anchor.fm/s/eb22fd30/podcast/rss No_Category The Subtle Art OPT_FILENAME_RENAME_TITLETAG OPT_FILENAME_RENAME_MDATE
+https://rss.art19.com/business-wars No_Category Business Wars OPT_FILENAME_RENAME_TITLETAG OPT_FILENAME_RENAME_MDATE
