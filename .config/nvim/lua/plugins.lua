@@ -28,6 +28,8 @@ return require('packer').startup(function(use)
 
   use 'jpalardy/vim-slime' -- Send code to REPL
 
+  use { 'codota/tabnine-nvim', run = "./dl_binaries.sh" }
+
   -- Automatically set up your configuration after cloning packer.nvim
   -- Put this at the end after all plugins
   if packer_bootstrap then

@@ -14,6 +14,7 @@ function bash_help_chatgpt() {
 alias bhp=bash_help_chatgpt
 
 alias S="source .venv/bin/activate"
+alias I=".venv/bin/ipython"
 
 
 alias cfg="cd ~/.config"
