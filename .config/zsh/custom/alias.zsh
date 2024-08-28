@@ -14,9 +14,10 @@ function bash_help_chatgpt() {
 alias bhp=bash_help_chatgpt
 
 alias S="source .venv/bin/activate"
+alias I=".venv/bin/ipython"
 
-alias t="todo.sh -d ~/.config/todo/config"
-
-alias fuz="fuz --path ~/Dropbox/notes"
 
 alias cfg="cd ~/.config"
+alias cfgn="cd ~/.config/nvim"
+alias cfgz="cd ~/.config/zsh"
+
