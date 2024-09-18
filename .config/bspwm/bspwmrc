@@ -1,6 +1,9 @@
 #! /bin/sh
 
 pgrep -x sxhkd > /dev/null || sxhkd &
+pgrep -x polybar > /dev/null || polybar &
+pgrep -x feh > /dev/null || feh --bg-fill /home/rbk/.local/share/wallpapers/
+
 
 bspc monitor -d I II III IV V VI VII VIII IX X
 
@@ -13,7 +16,7 @@ bspc config gapless_monocle      true
 
 bspc rule -a Gimp desktop='^8' state=floating follow=on
 bspc rule -a Chromium desktop='^2'
-bscp rule -a Slack desktop='^4' 
+bscp rule -a Slack desktop='^4' state=fullscreen
 bspc rule -a mplayer2 state=floating
 bspc rule -a Kupfer.py focus=on
 bspc rule -a Screenkey manage=off
