@@ -1,11 +1,43 @@
 #! /bin/sh
+INTERNAL_MONITOR="eDP-1"
+EXTERNAL_MONITOR="DP-1"
+
+
+
+bspc monitor $INTERNAL_MONITOR -d I II III IV
+# Second monitor
+if [[ $(xrandr -q | grep "$EXTERNAL_MONITOR connected") ]]; then
+    xrandr --output $INTERNAL_MONITOR --primary --mode 1920x1080 --rotate normal --output $EXTERNAL_MONITOR --mode 1920x1080 --rotate normal --right-of $INTERNAL_MONITOR
+    # Workspaces
+    bspc monitor $EXTERNAL_MONITOR -d V VI VII VIII
+else
+    xrandr --output $EXTERNAL_MONITOR --off
+    # Remove nodes
+    while bspc node @V: --kill; do
+        :
+    done
+    while bspc node @VI: --kill; do
+        :
+    done
+    while bspc node @VII: --kill; do
+        :
+    done
+    while bspc node @VIII: --kill; do
+        :
+    done
+    # Remove workspaces
+    bspc desktop -r V VI VII VIII
+    # Remove monitor
+    bspc monitor $EXTERNAL_MONITOR -r
+fi
+
 
 pgrep -x sxhkd > /dev/null || sxhkd &
 pgrep -x polybar > /dev/null || polybar &
 pgrep -x feh > /dev/null || feh --bg-fill /home/rbk/.local/share/wallpapers/
 
 
-bspc monitor -d I II III IV V VI VII VIII IX X
+
 
 bspc config border_width         2
 bspc config window_gap          12
@@ -14,9 +46,7 @@ bspc config split_ratio          0.52
 bspc config borderless_monocle   true
 bspc config gapless_monocle      true
 
-bspc rule -a Gimp desktop='^8' state=floating follow=on
-bspc rule -a Chromium desktop='^2'
-bscp rule -a Slack desktop='^4' state=fullscreen
-bspc rule -a mplayer2 state=floating
-bspc rule -a Kupfer.py focus=on
-bspc rule -a Screenkey manage=off
+bspc rule -a firefox desktop='^2'
+bspc rule -a Slack desktop='^3' follow=on 
+bspc rule -a Emacs desktop='^4' state=tiled
+bspc rule -a Spotify desktop='^5' state=tiled
