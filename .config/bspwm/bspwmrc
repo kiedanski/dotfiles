@@ -4,31 +4,10 @@ EXTERNAL_MONITOR="DP-1"
 
 
 
-bspc monitor $INTERNAL_MONITOR -d I II III IV
-# Second monitor
-if [[ $(xrandr -q | grep "$EXTERNAL_MONITOR connected") ]]; then
-    xrandr --output $INTERNAL_MONITOR --primary --mode 1920x1080 --rotate normal --output $EXTERNAL_MONITOR --mode 1920x1080 --rotate normal --right-of $INTERNAL_MONITOR
-    # Workspaces
-    bspc monitor $EXTERNAL_MONITOR -d V VI VII VIII
+if [[ $(xrandr -q | grep "^$EXTERNAL_MONITOR connected") ]]; then 
+	$HOME/.local/bin/select_display "2. Dual"	
 else
-    xrandr --output $EXTERNAL_MONITOR --off
-    # Remove nodes
-    while bspc node @V: --kill; do
-        :
-    done
-    while bspc node @VI: --kill; do
-        :
-    done
-    while bspc node @VII: --kill; do
-        :
-    done
-    while bspc node @VIII: --kill; do
-        :
-    done
-    # Remove workspaces
-    bspc desktop -r V VI VII VIII
-    # Remove monitor
-    bspc monitor $EXTERNAL_MONITOR -r
+	$HOME/.local/bin/select_display "1. Single"
 fi
 
 
