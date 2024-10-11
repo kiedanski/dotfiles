@@ -1,0 +1,6 @@
+
+sources=$(pactl list sources | grep -P '^\t\t\S.*:' | grep input)
+sinks=$(pactl list sinks | grep -P '^\t\t\S.*:' | grep output)
+
+echo $sources
+echo $sinks

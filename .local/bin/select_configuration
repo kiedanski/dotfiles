@@ -1,0 +1,15 @@
+OPTIONS=$(cat <<-END
+	1. Screen
+	2. Audio
+END
+)
+
+SELECTION=$(echo "$OPTIONS" | rofi -dmenu)
+
+echo $SELECTION
+
+case $SELECTION in
+	1*)	$(which select_display);;
+	2*)	echo "select audio";;
+esac
+

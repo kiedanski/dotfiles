@@ -127,3 +127,6 @@ super + {Left,Down,Up,Right}
 # other apps
 super + e
 	rofimoji
+
+super + shift + s
+	xfce4-screenshooter -s $HOME/Documents/Screenshots/$(date -I'seconds').jpg --region --clipboard
