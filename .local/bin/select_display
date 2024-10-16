@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 OPTIONS=$(cat <<- END
 	1. Single Screen
 	2. Dual Screen
@@ -8,21 +7,14 @@ END
 )
 
 get_connected_external_displays() {
-  xrandr | grep " connected" | grep -v "eDP-1" | awk '{ print $1 }'
+  xrandr -q | grep " connected" | grep -v "eDP-1" | awk '{ print $1 }'
 }
 
 # Get connected external displays
 CONNECTED_EXTERNAL_DISPLAYS=$(get_connected_external_displays)
+echo $CONNECTED_EXTERNAL_DISPLAYS
+export DP_OUTPUT=$CONNECTED_EXTERNAL_DISPLAYS
 
-# Determine which DP output to use
-if echo "$CONNECTED_EXTERNAL_DISPLAYS" | grep -q "DP-1"; then
-  DP_OUTPUT="DP-1"
-elif echo "$CONNECTED_EXTERNAL_DISPLAYS" | grep -q "DP-2"; then
-  DP_OUTPUT="DP-2"
-else
-  echo "No external display connected."
-  DP_OUTPUT=""
-fi
 
 function multi_display {
 
@@ -32,8 +24,8 @@ function multi_display {
   bspc monitor $DP_OUTPUT -d V VI VII VIII
   
   echo "---" | tee -a /tmp/polybar_primary.log /tmp/polybar_secondary.log
-  polybar -c $HOME/.config/polybar/primary.ini 2>&1 | tee -a /tmp/polybar_primary.log & disown
-  polybar -c $HOME/.config/polybar/secondary.ini 2>&1 | tee -a /tmp/polybar_secondary.log & disown
+  polybar internal | tee -a /tmp/polybar_primary.log & disown
+  polybar external | tee -a /tmp/polybar_secondary.log & disown
 
 }
 
@@ -45,7 +37,7 @@ function single_display {
   bspc monitor eDP-1 -d I II III IV V VI VII VIII
 
   echo "---" | tee -a /tmp/polybar_config.log
-  polybar -c $HOME/.config/polybar/config.ini 2>&1 | tee -a /tmp/polybar_config.log & disown
+  polybar default | tee -a /tmp/polybar_config.log & disown
 
 }
 

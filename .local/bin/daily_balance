@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+BALANCE_FILE="$HOME/org/balance.org"
+
+# Define a function to format expenses as a Markdown table
+format_expenses_to_markdown() {
+    local expenses="$1"
+    echo "$expenses" | awk '
+    BEGIN {
+        print "| Amount (USD) | Category | Description      |"
+        print "|--------------|----------|------------------|"
+    }
+    {
+        # Check for the separator line
+        if ($0 ~ /^-+$/) {
+            # Skip the separator line
+            next
+        }
+        # Match lines with the pattern of amount, currency, and category:description
+        else if (match($0, /([0-9]+\.[0-9]+) USD +([^:]+):([^:]+):?(.+)?/, groups)) {
+            # If there are three parts, use the last two parts as category and description
+            category = groups[3]
+            description = (groups[4] == "" ? groups[3] : groups[4])
+            printf("| %12s | %8s | %16s |\n", groups[1], category, description)
+        }
+        # Handle the total balance line
+        else if (match($0, /([0-9]+\.[0-9]+) USD/, groups)) {
+            print "|--------------|----------|------------------|"
+            printf("| %12s | %-8s | %-16s |\n", groups[1], "", "Total")
+        }
+    }'
+}
+
+high_level=$(hledger bal ^expenses --depth 2 -X USD not:expenses:taxes) #>> $BALANCE_FILE 
+low_level=$(hledger bal ^expenses --depth 3 -X USD not:expenses:taxes)
+
+
+
+echo -e "* High Level\n" > $BALANCE_FILE 
+format_expenses_to_markdown "$high_level" >> $BALANCE_FILE
+echo -e "\n* Low Level\n" >> $BALANCE_FILE 
+format_expenses_to_markdown "$low_level"  >> $BALANCE_FILE
