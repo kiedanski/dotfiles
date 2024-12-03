@@ -15,4 +15,4 @@ if [ -f '/Users/rebelde/Downloads/google-cloud-sdk/completion.zsh.inc' ]; then .
 
 
 # Hledger XPS
-export LEDGER_FILE="$HOME/syncthing/root/ledger/main.journal"
+export LEDGER_FILE="$HOME/text/ledger/main.journal"
