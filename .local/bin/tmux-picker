@@ -1,0 +1,286 @@
+#!/bin/bash
+# Tmux session picker with fzf
+# Shows existing sessions + available git repos in ~/workspace
+
+WORKSPACE="$HOME/workspace"
+CACHE_DIR="$HOME/.cache/tmux-picker"
+HISTORY_FILE="$CACHE_DIR/session-history"
+BRANCH_HISTORY="$CACHE_DIR/branch-history"
+BASE_HISTORY="$CACHE_DIR/base-history"
+
+# Create cache directory if it doesn't exist
+mkdir -p "$CACHE_DIR"
+touch "$BRANCH_HISTORY"
+
+# Calculate frecency score (frequency + recency)
+# More recent = higher score, more frequent = higher score
+calculate_frecency() {
+    local item="$1"
+    local frecency_file="$CACHE_DIR/frecency"
+
+    if [ ! -f "$frecency_file" ]; then
+        echo "0"
+        return
+    fi
+
+    local now=$(date +%s)
+    local score=0
+
+    # Look through history for this item
+    while IFS=' ' read -r timestamp name; do
+        if [ "$name" = "$item" ]; then
+            local age=$((now - timestamp))
+            # Exponential decay: more recent = higher score
+            # 1 day old = 1.0, 7 days = 0.5, 30 days = 0.1
+            local recency_score=$(awk "BEGIN {print 1 / (1 + $age / 86400)}")
+            score=$(awk "BEGIN {print $score + $recency_score}")
+        fi
+    done < "$frecency_file"
+
+    echo "$score"
+}
+
+# Sort items by frecency
+sort_by_frecency() {
+    local items="$1"
+    local scored_items=""
+
+    while IFS= read -r line; do
+        # Remove indicator and trim whitespace for matching
+        local clean_item=$(echo "$line" | sed 's/^[●○] //' | xargs)
+        local score=$(calculate_frecency "$clean_item")
+        # Pad score for sorting
+        printf "%010.5f %s\n" "$score" "$line"
+    done <<< "$items" | sort -rn | cut -d' ' -f2-
+}
+
+# Prompt for branch name with existing branches + history
+prompt_branch_name() {
+    local branch_name
+
+    # Combine existing branches + history
+    branch_name=$(
+        {
+            # Existing local branches
+            git branch --format='%(refname:short)' 2>/dev/null | sed 's/^/  /'
+            # Existing remote branches (without origin/ prefix)
+            git branch -r --format='%(refname:short)' 2>/dev/null | sed 's|origin/||' | sed 's/^/  /'
+            # Recent history
+            cat "$BRANCH_HISTORY" 2>/dev/null | tac | sed 's/^/  /'
+        } | sort -u | \
+        fzf --height=40% --reverse --prompt="Select or type branch name: " \
+            --print-query --history="$BRANCH_HISTORY" | tail -1 | xargs
+    )
+
+    if [ -n "$branch_name" ]; then
+        # Save to history
+        echo "$branch_name" >> "$BRANCH_HISTORY"
+        # Keep only last 100 entries
+        tail -100 "$BRANCH_HISTORY" > "$BRANCH_HISTORY.tmp"
+        mv "$BRANCH_HISTORY.tmp" "$BRANCH_HISTORY"
+    fi
+
+    echo "$branch_name"
+}
+
+# Get list of existing tmux sessions with status indicators
+get_sessions() {
+    if tmux list-sessions &>/dev/null; then
+        local current_session=""
+        if [ -n "$TMUX" ]; then
+            current_session=$(tmux display-message -p '#S')
+        fi
+
+        tmux list-sessions -F "#{session_name}" | while read -r session; do
+            if [ "$session" = "$current_session" ]; then
+                echo "● $session"
+            else
+                echo "○ $session"
+            fi
+        done
+    fi
+}
+
+# Get list of git repos in workspace that don't have sessions
+get_available_projects() {
+    if [ ! -d "$WORKSPACE" ]; then
+        return
+    fi
+
+    # Get session names without indicators
+    local existing_sessions=$(tmux list-sessions -F "#{session_name}" 2>/dev/null || echo "")
+
+    # Find git repos in workspace
+    find "$WORKSPACE" -mindepth 1 -maxdepth 1 -type d | while read -r dir; do
+        # Check if it's a git repo
+        if [ -d "$dir/.git" ]; then
+            local project=$(basename "$dir")
+            # Only show if no session exists with this name
+            if ! echo "$existing_sessions" | grep -q "^${project}\(-.*\)\?$"; then
+                echo "  $project"
+            fi
+        fi
+    done
+}
+
+# Combine both lists, sort by frecency, and show in fzf with history
+all_items=$(
+    {
+        get_sessions
+        get_available_projects
+    }
+)
+
+# Sort by frecency (most used/recent first)
+sorted_items=$(sort_by_frecency "$all_items")
+
+selected=$(
+    echo "$sorted_items" | \
+    fzf --height=40% --reverse --prompt="Select session or project: " --ansi \
+        --history="$HISTORY_FILE"
+)
+
+# Exit if nothing selected
+if [ -z "$selected" ]; then
+    exit 0
+fi
+
+# Remove indicator and trim whitespace
+selected=$(echo "$selected" | sed 's/^[●○] //' | xargs)
+
+# Record selection for frecency (save with timestamp)
+echo "$(date +%s) $selected" >> "$CACHE_DIR/frecency"
+
+# Clean up old frecency data (keep last 30 days)
+if [ -f "$CACHE_DIR/frecency" ]; then
+    cutoff=$(($(date +%s) - 2592000))  # 30 days in seconds
+    awk -v cutoff="$cutoff" '$1 >= cutoff' "$CACHE_DIR/frecency" > "$CACHE_DIR/frecency.tmp"
+    mv "$CACHE_DIR/frecency.tmp" "$CACHE_DIR/frecency"
+fi
+
+# Check if it's an existing session
+if tmux has-session -t "$selected" 2>/dev/null; then
+    # Switch to existing session
+    if [ -n "$TMUX" ]; then
+        tmux switch-client -t "$selected"
+    else
+        tmux attach-session -t "$selected"
+    fi
+else
+    # It's a project - need to create worktree
+    project_path="$WORKSPACE/$selected"
+    cd "$project_path" || exit 1
+
+    # Load config defaults if .devrc exists
+    DEFAULT_BASE_BRANCH="main"
+    if [ -f ".devrc" ]; then
+        source ".devrc"
+    fi
+
+    # Fetch latest
+    git fetch --quiet 2>/dev/null || true
+
+    # Prompt for branch name (need to open a new window for input in tmux)
+    if [ -n "$TMUX" ]; then
+        # Create temporary script for prompting
+        TEMP_SCRIPT=$(mktemp)
+        cat > "$TEMP_SCRIPT" << 'SCRIPT_EOF'
+#!/bin/bash
+PROJECT_PATH="$1"
+DEFAULT_BASE="$2"
+BRANCH_HISTORY="$3"
+BASE_HISTORY="$4"
+
+cd "$PROJECT_PATH"
+
+# Prompt for branch name with existing branches + history
+branch_name=$(
+    {
+        # Existing local branches
+        git branch --format='%(refname:short)' 2>/dev/null | sed 's/^/  /'
+        # Existing remote branches (without origin/ prefix)
+        git branch -r --format='%(refname:short)' 2>/dev/null | sed 's|origin/||' | sed 's/^/  /'
+        # Recent history
+        cat "$BRANCH_HISTORY" 2>/dev/null | tac | sed 's/^/  /'
+    } | sort -u | \
+    fzf --height=40% --reverse --prompt="Select or type branch name: " \
+        --print-query --history="$BRANCH_HISTORY" | tail -1 | xargs
+)
+
+if [ -z "$branch_name" ]; then
+    echo "Cancelled."
+    read -p "Press Enter to continue..."
+    exit 1
+fi
+
+# Save to history
+echo "$branch_name" >> "$BRANCH_HISTORY"
+tail -100 "$BRANCH_HISTORY" > "$BRANCH_HISTORY.tmp"
+mv "$BRANCH_HISTORY.tmp" "$BRANCH_HISTORY"
+
+# Check if branch exists (local or remote)
+if git rev-parse --verify "$branch_name" >/dev/null 2>&1 || \
+   git rev-parse --verify "origin/$branch_name" >/dev/null 2>&1; then
+    # Existing branch - no need for base branch
+    echo "Using existing branch: $branch_name"
+    read -p "Press Enter to continue..."
+    dev "$branch_name"
+else
+    # New branch - prompt for base
+    base_branch=$(
+        git branch -a --format='%(refname:short)' | \
+        sed 's|origin/||' | \
+        sort -u | \
+        fzf --height=40% --reverse --prompt="Select base branch [$DEFAULT_BASE]: " \
+            --query="$DEFAULT_BASE" --history="$BASE_HISTORY"
+    )
+
+    # Use default if nothing selected
+    if [ -z "$base_branch" ]; then
+        base_branch="$DEFAULT_BASE"
+    fi
+
+    # Run dev command with base branch
+    dev "$branch_name" "$base_branch"
+fi
+SCRIPT_EOF
+        chmod +x "$TEMP_SCRIPT"
+
+        # Open new window to run the prompts, then kill the window
+        tmux new-window -n "new-worktree" "$TEMP_SCRIPT '$project_path' '$DEFAULT_BASE_BRANCH' '$BRANCH_HISTORY' '$BASE_HISTORY'"
+        rm "$TEMP_SCRIPT"
+    else
+        # Outside tmux - can prompt directly
+        branch_name=$(prompt_branch_name)
+
+        if [ -z "$branch_name" ]; then
+            echo "Cancelled."
+            exit 1
+        fi
+
+        # Check if branch exists (local or remote)
+        if git rev-parse --verify "$branch_name" >/dev/null 2>&1 || \
+           git rev-parse --verify "origin/$branch_name" >/dev/null 2>&1; then
+            # Existing branch - no need for base branch
+            echo "Using existing branch: $branch_name"
+            dev "$branch_name"
+        else
+            # New branch - prompt for base
+            base_branch=$(
+                git branch -a --format='%(refname:short)' | \
+                sed 's|origin/||' | \
+                sort -u | \
+                fzf --height=40% --reverse --prompt="Select base branch [$DEFAULT_BASE_BRANCH]: " \
+                    --query="$DEFAULT_BASE_BRANCH" --history="$BASE_HISTORY"
+            )
+
+            # Use default if nothing selected
+            if [ -z "$base_branch" ]; then
+                base_branch="$DEFAULT_BASE_BRANCH"
+            fi
+
+            # Run dev command with base branch
+            dev "$branch_name" "$base_branch"
+        fi
+    fi
+fi

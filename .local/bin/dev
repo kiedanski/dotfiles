@@ -1,0 +1,117 @@
+#!/bin/bash
+# Create git worktree and start tmux session with dev layout
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Check if we're in a git repo
+if ! git rev-parse --git-dir > /dev/null 2>&1; then
+    echo -e "${RED}Error: Not in a git repository${NC}"
+    exit 1
+fi
+
+# Get project name (repo directory name)
+PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel)")
+
+# Parse arguments
+BRANCH_NAME="$1"
+BASE_BRANCH="$2"
+
+if [ -z "$BRANCH_NAME" ]; then
+    echo "Usage: dev <branch-name> [base-branch]"
+    echo ""
+    echo "Examples:"
+    echo "  dev feature-auth          # New branch from current branch"
+    echo "  dev feature-auth main     # New branch from main"
+    echo "  dev existing-branch       # Checkout existing branch"
+    exit 1
+fi
+
+# Fetch latest refs
+echo -e "${YELLOW}Fetching latest from remote...${NC}"
+git fetch --all --prune
+
+# Check if branch exists locally or remotely
+BRANCH_EXISTS_LOCAL=$(git rev-parse --verify "$BRANCH_NAME" 2>/dev/null || echo "")
+BRANCH_EXISTS_REMOTE=$(git rev-parse --verify "origin/$BRANCH_NAME" 2>/dev/null || echo "")
+
+# Determine worktree path
+WORKTREE_PATH="$(git rev-parse --show-toplevel)/worktrees/$BRANCH_NAME"
+
+# Check if branch is already checked out somewhere
+WORKTREE_IN_USE=$(git worktree list | grep -w "$BRANCH_NAME" | awk '{print $1}')
+
+if [ -n "$WORKTREE_IN_USE" ]; then
+    # Branch is already checked out (possibly in main directory)
+    echo -e "${YELLOW}Branch '$BRANCH_NAME' is already checked out at: $WORKTREE_IN_USE${NC}"
+    WORKTREE_PATH="$WORKTREE_IN_USE"
+elif [ -d "$WORKTREE_PATH" ]; then
+    echo -e "${GREEN}Worktree already exists at: $WORKTREE_PATH${NC}"
+else
+    # Determine what we're doing
+    if [ -n "$BRANCH_EXISTS_LOCAL" ]; then
+        echo -e "${GREEN}Branch '$BRANCH_NAME' exists locally${NC}"
+        echo "Creating worktree from existing branch: $BRANCH_NAME"
+        git worktree add "$WORKTREE_PATH" "$BRANCH_NAME"
+    elif [ -n "$BRANCH_EXISTS_REMOTE" ]; then
+        echo -e "${GREEN}Branch '$BRANCH_NAME' exists on remote${NC}"
+        echo "Creating worktree and tracking remote branch: origin/$BRANCH_NAME"
+        git worktree add "$WORKTREE_PATH" -b "$BRANCH_NAME" "origin/$BRANCH_NAME"
+    else
+        # New branch
+        if [ -z "$BASE_BRANCH" ]; then
+            BASE_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+            echo -e "${YELLOW}Creating new branch '$BRANCH_NAME' from current branch: $BASE_BRANCH${NC}"
+        else
+            echo -e "${YELLOW}Creating new branch '$BRANCH_NAME' from: $BASE_BRANCH${NC}"
+        fi
+
+        # Verify base branch exists
+        if ! git rev-parse --verify "$BASE_BRANCH" > /dev/null 2>&1; then
+            if ! git rev-parse --verify "origin/$BASE_BRANCH" > /dev/null 2>&1; then
+                echo -e "${RED}Error: Base branch '$BASE_BRANCH' does not exist${NC}"
+                exit 1
+            fi
+            BASE_BRANCH="origin/$BASE_BRANCH"
+        fi
+
+        git worktree add "$WORKTREE_PATH" -b "$BRANCH_NAME" "$BASE_BRANCH"
+        echo -e "${GREEN}Worktree created at: $WORKTREE_PATH${NC}"
+    fi
+fi
+
+# Create tmux session name (sanitize: replace / with -)
+SESSION_NAME="${PROJECT_NAME}-${BRANCH_NAME//\//-}"
+
+# Check if tmux session already exists
+if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+    echo -e "${GREEN}Tmux session '$SESSION_NAME' already exists${NC}"
+    echo "Attaching to session..."
+
+    # If we're already in tmux, switch to the session
+    if [ -n "$TMUX" ]; then
+        tmux switch-client -t "$SESSION_NAME"
+    else
+        tmux attach-session -t "$SESSION_NAME"
+    fi
+else
+    echo -e "${GREEN}Creating tmux session: $SESSION_NAME${NC}"
+
+    # Create new session in worktree directory
+    tmux new-session -d -s "$SESSION_NAME" -c "$WORKTREE_PATH"
+
+    # Apply dev layout
+    tmux run-shell -t "$SESSION_NAME" "$HOME/.config/tmux/layouts/dev.sh"
+
+    # Attach to the session
+    if [ -n "$TMUX" ]; then
+        tmux switch-client -t "$SESSION_NAME"
+    else
+        tmux attach-session -t "$SESSION_NAME"
+    fi
+fi

@@ -21,3 +21,11 @@ alias cfg="cd ~/.config"
 alias cfgn="cd ~/.config/nvim"
 alias cfgz="cd ~/.config/zsh"
 
+alias pnpx='pnpm dlx'
+
+alias kbp="kubectl -n llamacloud"
+
+alias tree="tree -I '__pycache__|.venv'"
+
+# tmux session picker
+alias ts='tmux-picker'
