@@ -5,12 +5,10 @@
 WORKSPACE="$HOME/workspace"
 CACHE_DIR="$HOME/.cache/tmux-picker"
 HISTORY_FILE="$CACHE_DIR/session-history"
-BRANCH_HISTORY="$CACHE_DIR/branch-history"
-BASE_HISTORY="$CACHE_DIR/base-history"
+# Note: BRANCH_HISTORY and BASE_HISTORY are now per-project, set later
 
 # Create cache directory if it doesn't exist
 mkdir -p "$CACHE_DIR"
-touch "$BRANCH_HISTORY"
 
 # Calculate frecency score (frequency + recency)
 # More recent = higher score, more frequent = higher score
@@ -47,7 +45,7 @@ sort_by_frecency() {
 
     while IFS= read -r line; do
         # Remove indicator and trim whitespace for matching
-        local clean_item=$(echo "$line" | sed 's/^[●○] //' | xargs)
+        local clean_item=$(echo "$line" | sed 's/^[●○+] //' | xargs)
         local score=$(calculate_frecency "$clean_item")
         # Pad score for sorting
         printf "%010.5f %s\n" "$score" "$line"
@@ -101,24 +99,19 @@ get_sessions() {
     fi
 }
 
-# Get list of git repos in workspace that don't have sessions
+# Get list of git repos in workspace
 get_available_projects() {
     if [ ! -d "$WORKSPACE" ]; then
         return
     fi
 
-    # Get session names without indicators
-    local existing_sessions=$(tmux list-sessions -F "#{session_name}" 2>/dev/null || echo "")
-
-    # Find git repos in workspace
+    # Find all git repos in workspace (always show them)
+    # Prefix with + to indicate it's a project (for creating new worktree)
     find "$WORKSPACE" -mindepth 1 -maxdepth 1 -type d | while read -r dir; do
         # Check if it's a git repo
         if [ -d "$dir/.git" ]; then
             local project=$(basename "$dir")
-            # Only show if no session exists with this name
-            if ! echo "$existing_sessions" | grep -q "^${project}\(-.*\)\?$"; then
-                echo "  $project"
-            fi
+            echo "+ $project"
         fi
     done
 }
@@ -145,8 +138,14 @@ if [ -z "$selected" ]; then
     exit 0
 fi
 
+# Check if it was a project selection (starts with +) before removing indicator
+is_project=false
+if echo "$selected" | grep -q "^+ "; then
+    is_project=true
+fi
+
 # Remove indicator and trim whitespace
-selected=$(echo "$selected" | sed 's/^[●○] //' | xargs)
+selected=$(echo "$selected" | sed 's/^[●○+] //' | xargs)
 
 # Record selection for frecency (save with timestamp)
 echo "$(date +%s) $selected" >> "$CACHE_DIR/frecency"
@@ -158,8 +157,8 @@ if [ -f "$CACHE_DIR/frecency" ]; then
     mv "$CACHE_DIR/frecency.tmp" "$CACHE_DIR/frecency"
 fi
 
-# Check if it's an existing session
-if tmux has-session -t "$selected" 2>/dev/null; then
+# Check if it's an existing session (and not a project selection)
+if [ "$is_project" = false ] && tmux has-session -t "$selected" 2>/dev/null; then
     # Switch to existing session
     if [ -n "$TMUX" ]; then
         tmux switch-client -t "$selected"
@@ -170,6 +169,11 @@ else
     # It's a project - need to create worktree
     project_path="$WORKSPACE/$selected"
     cd "$project_path" || exit 1
+
+    # Set per-project history files
+    BRANCH_HISTORY="$CACHE_DIR/branch-history-$selected"
+    BASE_HISTORY="$CACHE_DIR/base-history-$selected"
+    touch "$BRANCH_HISTORY"
 
     # Load config defaults if .devrc exists
     DEFAULT_BASE_BRANCH="main"

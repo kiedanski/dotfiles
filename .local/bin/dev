@@ -85,6 +85,32 @@ else
     fi
 fi
 
+# Copy files from .devrc if specified
+REPO_ROOT=$(git rev-parse --show-toplevel)
+if [ -f "$REPO_ROOT/.devrc" ]; then
+    # Source .devrc to get COPY_FILES
+    source "$REPO_ROOT/.devrc"
+
+    if [ -n "$COPY_FILES" ]; then
+        echo -e "${YELLOW}Copying files to worktree...${NC}"
+        for file in $COPY_FILES; do
+            source_file="$REPO_ROOT/$file"
+            dest_file="$WORKTREE_PATH/$file"
+
+            if [ -f "$source_file" ]; then
+                # Create directory if needed
+                dest_dir=$(dirname "$dest_file")
+                mkdir -p "$dest_dir"
+
+                cp "$source_file" "$dest_file"
+                echo -e "  ${GREEN}✓${NC} Copied: $file"
+            else
+                echo -e "  ${YELLOW}⚠${NC} Skipped: $file (not found)"
+            fi
+        done
+    fi
+fi
+
 # Create tmux session name (sanitize: replace / with -)
 SESSION_NAME="${PROJECT_NAME}-${BRANCH_NAME//\//-}"
 

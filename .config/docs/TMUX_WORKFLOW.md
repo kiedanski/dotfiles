@@ -80,6 +80,7 @@ ts                          # or Ctrl+a f inside tmux
 
 **Result:**
 - Worktree created at: `~/workspace/myproject/worktrees/feature-auth`
+- Files copied (if specified in `.devrc`): `.env`, `.env.local`, etc.
 - Session created: `myproject-feature-auth`
 - Layout applied: nvim | claude | terminal
 - Focus on claude pane
@@ -156,6 +157,9 @@ Create a `.devrc` file in any project to set defaults:
 ```bash
 # Default base branch for new branches
 BASE_BRANCH=develop
+
+# Files to copy to new worktrees (space-separated)
+COPY_FILES=".env .env.local config/secrets.yml"
 ```
 
 **Common examples:**
@@ -168,7 +172,19 @@ BASE_BRANCH=master
 
 # For monorepos with different patterns
 BASE_BRANCH=trunk
+
+# Copy environment files and secrets
+COPY_FILES=".env .env.local"
+
+# Copy multiple config files
+COPY_FILES=".env config/database.yml config/secrets.yml"
 ```
+
+**File Copying:**
+- Files are copied from the repo root to the same relative path in the worktree
+- Directories are created automatically if needed
+- Non-existent files are skipped with a warning
+- Useful for `.env` files, config files, secrets that shouldn't be committed
 
 ### Customizing the Layout
 
@@ -421,6 +437,16 @@ git worktree list
 
 # Remove unused ones
 git worktree remove worktrees/old-branch
+```
+
+### Automatically copy .env files to new worktrees
+```bash
+# In your project root, create .devrc:
+echo 'COPY_FILES=".env .env.local"' > .devrc
+
+# Now all new worktrees will have these files copied automatically
+dev new-branch
+# → Creates worktree with .env files already in place
 ```
 
 ### Export session list
