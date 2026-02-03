@@ -1,4 +1,9 @@
 [user]
 	name = Diego Kiedanski
-	email = diego@kiedanski.com
+	email = diego@runllama.ai
 	username = kiedanski
+
+[diff]
+    tool = vimdiff
+[difftool]
+    prompt = false
