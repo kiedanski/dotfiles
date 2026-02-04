@@ -1,0 +1,285 @@
+#!/bin/bash
+
+# VPN Manager - Clean, extensible VPN toggle script
+# Usage: vpn [zscaler|tailscale|off|status]
+
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+# VPN registry - add new VPNs here
+declare -A VPNS=(
+    ["zscaler"]="Zscaler (Work)"
+    ["tailscale"]="Tailscale (Personal)"
+)
+
+# Print colored output
+print_success() { echo -e "${GREEN}✓${NC} $1"; }
+print_error() { echo -e "${RED}✗${NC} $1"; }
+print_info() { echo -e "${BLUE}ℹ${NC} $1"; }
+print_warning() { echo -e "${YELLOW}⚠${NC} $1"; }
+
+# Check if running with sudo when needed
+require_sudo() {
+    if [ "$EUID" -ne 0 ]; then
+        echo "This operation requires sudo. Rerunning with sudo..."
+        exec sudo -E "$0" "$@"
+    fi
+}
+
+#═══════════════════════════════════════════════════════════
+# VPN Functions - Add new VPNs by adding functions below
+#═══════════════════════════════════════════════════════════
+
+# Zscaler Functions
+zscaler_start() {
+    print_info "Starting Zscaler..."
+    systemctl start zsaservice
+    sleep 2
+    if ! systemctl is-active --quiet zstunnel; then
+        systemctl start zstunnel 2>/dev/null || true
+    fi
+    sleep 1
+    if ! pgrep -x ZSTray >/dev/null; then
+        sudo -u "${SUDO_USER:-$USER}" DISPLAY=:0 /opt/zscaler/bin/ZSTray >/dev/null 2>&1 &
+    fi
+    print_success "Zscaler started"
+}
+
+zscaler_stop() {
+    print_info "Stopping Zscaler..."
+    systemctl stop zstunnel 2>/dev/null || true
+    systemctl stop zsaservice 2>/dev/null || true
+    killall ZSTray 2>/dev/null || true
+    print_success "Zscaler stopped"
+}
+
+zscaler_status() {
+    if systemctl is-active --quiet zsaservice; then
+        print_success "Zscaler is running"
+        return 0
+    else
+        print_error "Zscaler is stopped"
+        return 1
+    fi
+}
+
+zscaler_disable_autostart() {
+    systemctl disable zsaservice 2>/dev/null || true
+    print_info "Zscaler autostart disabled"
+}
+
+zscaler_enable_autostart() {
+    systemctl enable zsaservice 2>/dev/null || true
+    print_info "Zscaler autostart enabled"
+}
+
+# Tailscale Functions
+tailscale_start() {
+    print_info "Starting Tailscale..."
+    if ! systemctl is-active --quiet tailscaled; then
+        systemctl start tailscaled
+        sleep 1
+    fi
+    tailscale up
+    print_success "Tailscale started"
+}
+
+tailscale_stop() {
+    print_info "Stopping Tailscale..."
+    tailscale down 2>/dev/null || true
+    print_success "Tailscale stopped"
+}
+
+tailscale_status() {
+    if tailscale status >/dev/null 2>&1; then
+        print_success "Tailscale is running"
+        return 0
+    else
+        print_error "Tailscale is stopped"
+        return 1
+    fi
+}
+
+tailscale_disable_autostart() {
+    systemctl disable tailscaled 2>/dev/null || true
+    print_info "Tailscale autostart disabled"
+}
+
+tailscale_enable_autostart() {
+    systemctl enable tailscaled 2>/dev/null || true
+    print_info "Tailscale autostart enabled"
+}
+
+#═══════════════════════════════════════════════════════════
+# Core Functions
+#═══════════════════════════════════════════════════════════
+
+# Stop all VPNs
+stop_all_vpns() {
+    print_info "Stopping all VPNs..."
+    for vpn in "${!VPNS[@]}"; do
+        "${vpn}_stop" 2>/dev/null || true
+    done
+    print_success "All VPNs stopped"
+}
+
+# Show status of all VPNs
+show_status() {
+    echo ""
+    echo "═══════════════════════════════════"
+    echo "  VPN Status"
+    echo "═══════════════════════════════════"
+
+    for vpn in "${!VPNS[@]}"; do
+        echo -n "${VPNS[$vpn]} : "
+        "${vpn}_status" || true
+    done
+    echo ""
+}
+
+# Disable autostart for all VPNs
+disable_all_autostart() {
+    require_sudo "$@"
+    print_info "Disabling autostart for all VPNs..."
+    for vpn in "${!VPNS[@]}"; do
+        "${vpn}_disable_autostart" 2>/dev/null || true
+    done
+    print_success "All VPN autostarts disabled"
+}
+
+# Start a specific VPN (stops all others first)
+start_vpn() {
+    local target_vpn="$1"
+
+    if [[ ! -v "VPNS[$target_vpn]" ]]; then
+        print_error "Unknown VPN: $target_vpn"
+        echo "Available VPNs: ${!VPNS[*]}"
+        exit 1
+    fi
+
+    require_sudo "$@"
+
+    print_info "Switching to ${VPNS[$target_vpn]}..."
+
+    # Stop all other VPNs
+    for vpn in "${!VPNS[@]}"; do
+        if [[ "$vpn" != "$target_vpn" ]]; then
+            "${vpn}_stop" 2>/dev/null || true
+        fi
+    done
+
+    # Start the target VPN
+    "${target_vpn}_start"
+
+    show_status
+}
+
+# Interactive menu
+show_menu() {
+    echo
+    echo "═══════════════════════════════════"
+    echo "  VPN Manager"
+    echo "═══════════════════════════════════"
+    echo
+
+    local i=1
+    local -a vpn_list
+
+    for vpn in "${!VPNS[@]}"; do
+        vpn_list+=("$vpn")
+        echo "  $i) ${VPNS[$vpn]}"
+        ((i++))
+    done
+
+    echo "  $i) Turn off all VPNs"
+    echo "  0) Exit"
+    echo
+
+    read -rp "Select option: " choice
+
+    if [[ "$choice" == "0" ]]; then
+        exit 0
+    elif [[ "$choice" == "$i" ]]; then
+        require_sudo "$@"
+        stop_all_vpns
+        show_status
+    elif [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -lt "$i" ]; then
+        start_vpn "${vpn_list[$((choice-1))]}"
+    else
+        print_error "Invalid option"
+        exit 1
+    fi
+}
+
+# Usage information
+show_usage() {
+    cat << EOF
+VPN Manager - Toggle between VPNs
+
+Usage:
+  vpn [COMMAND]
+
+Commands:
+  zscaler           Start Zscaler (stops other VPNs)
+  tailscale         Start Tailscale (stops other VPNs)
+  off               Stop all VPNs
+  status            Show status of all VPNs
+  disable-autostart Disable autostart for all VPNs
+  menu              Show interactive menu (default)
+  help              Show this help
+
+Examples:
+  vpn zscaler       # Switch to Zscaler
+  vpn tailscale     # Switch to Tailscale
+  vpn off           # Turn off all VPNs
+  vpn status        # Check which VPNs are running
+
+EOF
+}
+
+#═══════════════════════════════════════════════════════════
+# Main
+#═══════════════════════════════════════════════════════════
+
+main() {
+    local command="${1:-menu}"
+
+    case "$command" in
+        status)
+            show_status
+            ;;
+        off)
+            require_sudo "$@"
+            stop_all_vpns
+            show_status
+            ;;
+        disable-autostart)
+            disable_all_autostart "$@"
+            ;;
+        menu)
+            show_menu "$@"
+            ;;
+        help|--help|-h)
+            show_usage
+            ;;
+        *)
+            # Check if it's a valid VPN name
+            if [[ -v "VPNS[$command]" ]]; then
+                start_vpn "$command"
+            else
+                print_error "Unknown command: $command"
+                echo
+                show_usage
+                exit 1
+            fi
+            ;;
+    esac
+}
+
+main "$@"
