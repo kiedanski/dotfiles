@@ -71,7 +71,15 @@ zscaler_status() {
 
 zscaler_disable_autostart() {
     systemctl disable zsaservice 2>/dev/null || true
-    print_info "Zscaler autostart disabled"
+    # Disable ZSTray desktop autostart
+    mkdir -p ~/.config/autostart
+    cat > ~/.config/autostart/ZSTray.desktop << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=ZScaler Client Connector
+Hidden=true
+EOF
+    print_info "Zscaler autostart disabled (service and tray)"
 }
 
 zscaler_enable_autostart() {
@@ -87,7 +95,8 @@ tailscale_start() {
         sleep 1
     fi
     tailscale up
-    print_success "Tailscale started"
+    tailscale set --exit-node=ip-172-31-28-52
+    print_success "Tailscale started with exit node ip-172-31-28-52"
 }
 
 tailscale_stop() {

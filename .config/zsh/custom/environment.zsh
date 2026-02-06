@@ -1,9 +1,3 @@
-export PYENV_ROOT="$HOME/.pyenv"
-
-command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
-command -v pyenv >/dev/null && eval "$(pyenv init -)"
-
-
 export EDITOR=nvim
 
 
@@ -19,8 +13,7 @@ export LEDGER_FILE="$HOME/text/ledger/main.journal"
 
 
 
-eval "$(/Users/rebelde/.local/bin/mise activate zsh)"
-eval "$(pyenv virtualenv-init -)"
+eval "$($(which mise) activate zsh)"
 
 export PNPM_HOME="/Users/rebelde/.local/share/pnpm"
 case ":$PATH:" in
