@@ -46,6 +46,65 @@ ffmpeg
 xsv
 ```
 
+# Window Manager Setup (bspwm + sxhkd)
+
+## Install packages
+
+```sh
+sudo apt update
+sudo apt install bspwm sxhkd rofi nitrogen picom feh alacritty polybar -y
+```
+
+**Package descriptions:**
+- `bspwm` - Binary space partitioning window manager
+- `sxhkd` - Simple X hotkey daemon
+- `rofi` - Application launcher
+- `alacritty` - Terminal emulator
+- `nitrogen` or `feh` - Wallpaper setter
+- `picom` - Compositor for transparency/effects
+- `polybar` - Status bar (optional)
+
+## Configuration
+
+Configuration files are located at:
+- `~/.config/bspwm/bspwmrc` - bspwm configuration
+- `~/.config/sxhkd/sxhkdrc` - hotkey bindings
+
+## Enable bspwm
+
+Add to `~/.xinitrc`:
+```sh
+exec bspwm
+```
+
+Or select bspwm from your display manager.
+
+## Key Bindings (Super = Windows key)
+
+**Essential:**
+- `Super + Enter` - Open terminal
+- `Super + d` - Application launcher (rofi)
+- `Super + q` - Close window
+- `Super + Shift + q` - Kill window
+- `Super + Alt + r` - Restart bspwm
+- `Super + Alt + q` - Quit bspwm
+- `Super + Escape` - Reload sxhkd config
+
+**Window Management:**
+- `Super + h/j/k/l` - Focus window (left/down/up/right)
+- `Super + Shift + h/j/k/l` - Move window
+- `Super + 1-9,0` - Switch to desktop 1-10
+- `Super + Shift + 1-9,0` - Send window to desktop
+- `Super + f` - Fullscreen
+- `Super + t` - Tiled mode
+- `Super + s` - Floating mode
+- `Super + m` - Toggle monocle (maximized) layout
+
+**Resizing:**
+- `Super + Alt + h/j/k/l` - Expand window
+- `Super + Alt + Shift + h/j/k/l` - Contract window
+- `Super + Arrow keys` - Move floating window
+
 # References
 
 This config is based on [this guide](https://www.atlassian.com/git/tutorials/dotfiles)

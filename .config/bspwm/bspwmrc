@@ -1,26 +1,50 @@
-#! /bin/sh
+#!/bin/sh
 
-if [[ $(xrandr -q | grep "^$EXTERNAL_MONITOR connected") ]]; then 
-	$HOME/.local/bin/select_display "2. Dual"	
+# Autostart programs
+pgrep -x sxhkd > /dev/null || sxhkd &
+picom &
+nitrogen --restore &
+$HOME/.config/polybar/launch.sh &
+
+# System tray applets
+nm-applet &                    # Network manager
+blueman-applet &               # Bluetooth manager
+pasystray &                    # Audio volume control
+1password --silent &           # 1Password background agent
+
+# Monitor and desktop setup
+# Detect number of monitors and configure workspaces
+if [ $(bspc query -M | wc -l) -eq 2 ]; then
+    # Two monitors: split workspaces 1-5 and 6-10
+    bspc monitor $(bspc query -M | sed -n 1p) -d 1 2 3 4 5
+    bspc monitor $(bspc query -M | sed -n 2p) -d 6 7 8 9 10
 else
-	$HOME/.local/bin/select_display "1. Single"
+    # Single monitor: all workspaces
+    bspc monitor -d 1 2 3 4 5 6 7 8 9 10
 fi
 
-
-pgrep -x sxhkd > /dev/null || sxhkd &
-pgrep -x polybar > /dev/null || polybar &
-pgrep -x feh > /dev/null || feh --bg-fill /home/rbk/.local/share/wallpapers/
-
-
+# Window settings
 bspc config border_width         2
 bspc config window_gap          12
-
 bspc config split_ratio          0.52
 bspc config borderless_monocle   true
 bspc config gapless_monocle      true
 
-bspc rule -a firefox desktop='^2'
-bspc rule -a Slack desktop='^3' follow=on 
-bspc rule -a Emacs desktop='^4' state=tiled
-bspc rule -a thunderbird desktop='^5' state=tiled
-bspc rule -a Spotify desktop='^5' state=tiled
+# Colors
+bspc config normal_border_color  "#44475a"
+bspc config active_border_color  "#bd93f9"
+bspc config focused_border_color "#ff79c6"
+bspc config presel_feedback_color "#6272a4"
+
+# Mouse settings
+bspc config pointer_modifier mod4
+bspc config pointer_action1 move
+bspc config pointer_action2 resize_side
+bspc config pointer_action3 resize_corner
+
+# Window rules
+bspc rule -a Gimp desktop='^8' state=floating follow=on
+bspc rule -a Firefox desktop='^2'
+bspc rule -a mplayer2 state=floating
+bspc rule -a Kupfer.py focus=on
+bspc rule -a Screenkey manage=off
