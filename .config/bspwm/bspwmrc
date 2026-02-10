@@ -4,24 +4,15 @@
 pgrep -x sxhkd > /dev/null || sxhkd &
 picom &
 nitrogen --restore &
-$HOME/.config/polybar/launch.sh &
 
-# System tray applets
-nm-applet &                    # Network manager
-blueman-applet &               # Bluetooth manager
-pasystray &                    # Audio volume control
-1password --silent &           # 1Password background agent
+# System tray applets (only start if not already running)
+pgrep -x nm-applet > /dev/null || nm-applet &
+pgrep -x blueman-applet > /dev/null || blueman-applet &
+pgrep -x pasystray > /dev/null || pasystray &
+pgrep -x 1password > /dev/null || 1password --silent &
 
 # Monitor and desktop setup
-# Detect number of monitors and configure workspaces
-if [ $(bspc query -M | wc -l) -eq 2 ]; then
-    # Two monitors: split workspaces 1-5 and 6-10
-    bspc monitor $(bspc query -M | sed -n 1p) -d 1 2 3 4 5
-    bspc monitor $(bspc query -M | sed -n 2p) -d 6 7 8 9 10
-else
-    # Single monitor: all workspaces
-    bspc monitor -d 1 2 3 4 5 6 7 8 9 10
-fi
+$HOME/.config/bspwm/scripts/monitor-setup.sh
 
 # Window settings
 bspc config border_width         2
@@ -48,3 +39,5 @@ bspc rule -a Firefox desktop='^2'
 bspc rule -a mplayer2 state=floating
 bspc rule -a Kupfer.py focus=on
 bspc rule -a Screenkey manage=off
+bspc rule -a ZSTray state=tiled
+bspc rule -a zoom state=floating follow=on sticky=off

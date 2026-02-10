@@ -58,6 +58,10 @@ super + Escape
 super + alt + {q,r}
 	bspc {quit,wm -r}
 
+# reconfigure monitors (when plugging/unplugging displays)
+super + alt + m
+	$HOME/.config/bspwm/scripts/monitor-setup.sh
+
 # close and kill
 super + {_,shift + }q
 	bspc node -{c,k}
