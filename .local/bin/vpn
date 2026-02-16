@@ -15,7 +15,8 @@ NC='\033[0m'
 # VPN registry - add new VPNs here
 declare -A VPNS=(
     ["zscaler"]="Zscaler (Work)"
-    ["tailscale"]="Tailscale (Personal)"
+    ["tailscale"]="Tailscale (Work)"
+    ["tailscale_personal"]="Tailscale (Personal)"
 )
 
 # Print colored output
@@ -87,16 +88,25 @@ zscaler_enable_autostart() {
     print_info "Zscaler autostart enabled"
 }
 
-# Tailscale Functions
+# Tailscale Functions (Work)
 tailscale_start() {
-    print_info "Starting Tailscale..."
+    print_info "Starting Tailscale (Work)..."
     if ! systemctl is-active --quiet tailscaled; then
         systemctl start tailscaled
         sleep 1
     fi
+
+    # Switch to work account (runllama.ai)
+    local work_account=$(tailscale switch --list 2>/dev/null | grep "runllama" | head -1 | awk '{print $1}')
+
+    if [ -n "$work_account" ]; then
+        tailscale switch "$work_account" 2>/dev/null || print_warning "Could not switch accounts"
+        sleep 1
+    fi
+
     tailscale up
     tailscale set --exit-node=ip-172-31-28-52
-    print_success "Tailscale started with exit node ip-172-31-28-52"
+    print_success "Tailscale (Work) started with exit node ip-172-31-28-52"
 }
 
 tailscale_stop() {
@@ -107,10 +117,17 @@ tailscale_stop() {
 
 tailscale_status() {
     if tailscale status >/dev/null 2>&1; then
-        print_success "Tailscale is running"
-        return 0
+        # Check if the work account (runllama.ai) is active
+        local current_account=$(tailscale switch --list 2>/dev/null | grep '\*' | grep -o '[^ ]*@[^ ]*' | head -1)
+        if [[ "$current_account" == *"runllama"* ]]; then
+            print_success "Tailscale (Work) is running"
+            return 0
+        else
+            print_error "Tailscale (Work) is stopped"
+            return 1
+        fi
     else
-        print_error "Tailscale is stopped"
+        print_error "Tailscale (Work) is stopped"
         return 1
     fi
 }
@@ -121,6 +138,61 @@ tailscale_disable_autostart() {
 }
 
 tailscale_enable_autostart() {
+    systemctl enable tailscaled 2>/dev/null || true
+    print_info "Tailscale autostart enabled"
+}
+
+# Tailscale Personal Functions
+tailscale_personal_start() {
+    print_info "Starting Tailscale (Personal)..."
+    if ! systemctl is-active --quiet tailscaled; then
+        systemctl start tailscaled
+        sleep 1
+    fi
+
+    # Switch to personal account (kiedanski.github)
+    local personal_account=$(tailscale switch --list 2>/dev/null | grep "kiedanski" | head -1 | awk '{print $1}')
+
+    if [ -n "$personal_account" ]; then
+        tailscale switch "$personal_account" 2>/dev/null || print_warning "Could not switch accounts. You may need to login with: sudo tailscale login"
+        sleep 1
+    else
+        print_warning "Personal account not found. Login with: sudo tailscale login"
+    fi
+
+    tailscale up --exit-node=
+    print_success "Tailscale (Personal) started (no exit node)"
+}
+
+tailscale_personal_stop() {
+    print_info "Stopping Tailscale..."
+    tailscale down 2>/dev/null || true
+    print_success "Tailscale stopped"
+}
+
+tailscale_personal_status() {
+    if tailscale status >/dev/null 2>&1; then
+        # Check if the personal account (kiedanski) is active
+        local current_account=$(tailscale switch --list 2>/dev/null | grep '\*' | grep -o '[^ ]*@[^ ]*' | head -1)
+        if [[ "$current_account" == *"kiedanski"* ]]; then
+            print_success "Tailscale (Personal) is running"
+            return 0
+        else
+            print_error "Tailscale (Personal) is stopped"
+            return 1
+        fi
+    else
+        print_error "Tailscale (Personal) is stopped"
+        return 1
+    fi
+}
+
+tailscale_personal_disable_autostart() {
+    systemctl disable tailscaled 2>/dev/null || true
+    print_info "Tailscale autostart disabled"
+}
+
+tailscale_personal_enable_autostart() {
     systemctl enable tailscaled 2>/dev/null || true
     print_info "Tailscale autostart enabled"
 }
@@ -235,19 +307,21 @@ Usage:
   vpn [COMMAND]
 
 Commands:
-  zscaler           Start Zscaler (stops other VPNs)
-  tailscale         Start Tailscale (stops other VPNs)
-  off               Stop all VPNs
-  status            Show status of all VPNs
-  disable-autostart Disable autostart for all VPNs
-  menu              Show interactive menu (default)
-  help              Show this help
+  zscaler            Start Zscaler (stops other VPNs)
+  tailscale          Start Tailscale Work (stops other VPNs)
+  tailscale_personal Start Tailscale Personal (stops other VPNs)
+  off                Stop all VPNs
+  status             Show status of all VPNs
+  disable-autostart  Disable autostart for all VPNs
+  menu               Show interactive menu (default)
+  help               Show this help
 
 Examples:
-  vpn zscaler       # Switch to Zscaler
-  vpn tailscale     # Switch to Tailscale
-  vpn off           # Turn off all VPNs
-  vpn status        # Check which VPNs are running
+  vpn zscaler            # Switch to Zscaler
+  vpn tailscale          # Switch to Tailscale (Work)
+  vpn tailscale_personal # Switch to Tailscale (Personal)
+  vpn off                # Turn off all VPNs
+  vpn status             # Check which VPNs are running
 
 EOF
 }

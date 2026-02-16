@@ -86,3 +86,16 @@ vim.g.loaded_ruby_provider = 0
 vim.opt.lazyredraw = true
 vim.opt.updatetime = 100
 vim.opt.synmaxcol = 200
+
+-- Terminal/Kitty keyboard protocol fixes
+-- Prevent duplicate key events in kitty terminal
+vim.opt.timeout = true
+vim.opt.timeoutlen = 500
+vim.opt.ttimeoutlen = 10
+
+-- Disable some terminal features that can cause duplicate inputs
+if vim.env.TERM == "xterm-kitty" or vim.env.TERM == "xterm-256color" then
+  -- Ensure we're using proper terminal sequences
+  vim.opt.ttimeout = true
+  vim.opt.ttimeoutlen = 0
+end

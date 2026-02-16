@@ -8,11 +8,10 @@ nitrogen --restore &
 # System tray applets (only start if not already running)
 pgrep -x nm-applet > /dev/null || nm-applet &
 pgrep -x blueman-applet > /dev/null || blueman-applet &
-pgrep -x pasystray > /dev/null || pasystray &
 pgrep -x 1password > /dev/null || 1password --silent &
 
-# Monitor and desktop setup
-$HOME/.config/bspwm/scripts/monitor-setup.sh
+# Monitor and desktop setup (using autorandr)
+autorandr --change --default carbon --force
 
 # Window settings
 bspc config border_width         2
@@ -40,4 +39,3 @@ bspc rule -a mplayer2 state=floating
 bspc rule -a Kupfer.py focus=on
 bspc rule -a Screenkey manage=off
 bspc rule -a ZSTray state=tiled
-bspc rule -a zoom state=floating follow=on sticky=off

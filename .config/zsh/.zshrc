@@ -1,9 +1,15 @@
 # If you come from bash you might have to change your $PATH.
-export PATH=$HOME/.local/bin:/opt/homebrew/bin:$HOME/bin:/usr/local/bin:$PATH:$HOME/.cargo/bin:$HOME/.config/emacs/bin
+export PATH=$HOME/.local/bin:/opt/homebrew/bin:$HOME/bin:/usr/local/bin:$PATH:$HOME/.cargo/bin:$HOME/.config/emacs/bin:$HOME/.opencode/bin
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_CACHE_HOME="$HOME/.cache"
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_STATE_HOME="$HOME/.local/state"
+
+# Fix for IBus/input method duplicate key events (especially backspace in vim)
+export GLFW_IM_MODULE=
+export GTK_IM_MODULE=
+export QT_IM_MODULE=
+export XMODIFIERS=@im=none
 
 # Configure zsh
 export ZSH="$XDG_DATA_HOME/oh-my-zsh"

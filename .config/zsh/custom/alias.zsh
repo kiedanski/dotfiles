@@ -29,3 +29,6 @@ alias tree="tree -I '__pycache__|.venv'"
 
 # tmux session picker
 alias ts='tmux-picker'
+
+
+alias todo="ttdl --done-file $HOME/notes/done.txt --todo-file $HOME/notes/todo.txt"

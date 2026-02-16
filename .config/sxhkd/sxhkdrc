@@ -18,6 +18,10 @@ super + backslash
 super + a
 	pavucontrol
 
+# audio output switcher
+super + shift + a
+	$HOME/.config/rofi/scripts/audio-switcher.sh
+
 # volume control
 XF86AudioRaiseVolume
 	pactl set-sink-volume @DEFAULT_SINK@ +5%
@@ -60,7 +64,7 @@ super + alt + {q,r}
 
 # reconfigure monitors (when plugging/unplugging displays)
 super + alt + m
-	$HOME/.config/bspwm/scripts/monitor-setup.sh
+	autorandr --change
 
 # close and kill
 super + {_,shift + }q
