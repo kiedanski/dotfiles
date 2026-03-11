@@ -1,0 +1,16 @@
+# Large/ephemeral Claude Code data — do not track
+projects/
+debug/
+telemetry/
+file-history/
+history.jsonl
+paste-cache/
+cache/
+todos/
+tasks/
+stats-cache.json
+session-env/
+shell-snapshots/
+backups/
+downloads/
+plugins/
