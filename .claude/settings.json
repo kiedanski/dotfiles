@@ -1,3 +1,16 @@
 {
+  "enabledPlugins": {
+    "voicemode@voicemode": true,
+    "slack@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "voicemode": {
+      "source": {
+        "source": "github",
+        "repo": "mbailey/voicemode"
+      }
+    }
+  },
+  "voiceEnabled": true,
   "skipDangerousModePermissionPrompt": true
 }

@@ -6,6 +6,14 @@
 super + Return
 	kitty
 
+# scratchpad terminal
+super + shift + Return
+	~/.config/bspwm/scripts/scratchpad
+
+# scratchpad notes
+hyper + n
+	~/.config/bspwm/scripts/scratchpad-notes
+
 # program launcher
 super + d
 	rofi -show drun
@@ -13,6 +21,10 @@ super + d
 # 1password quick access
 super + backslash
 	1password --quick-access
+
+# config switcher (capslock + c)
+hyper + c
+	select_configuration
 
 # audio control panel
 super + a
@@ -49,6 +61,10 @@ Print
 # screenshot - select area and copy to clipboard
 shift + Print
 	maim -s | xclip -selection clipboard -t image/png
+
+# screen recording toggle (capslock + r)
+hyper + r
+	/home/rbk/.local/bin/toggle-recording
 
 # make sxhkd reload its configuration files:
 super + Escape
@@ -163,3 +179,8 @@ super + alt + shift + {h,j,k,l}
 # move a floating window
 super + {Left,Down,Up,Right}
 	bspc node -v {-20 0,0 20,0 -20,20 0}
+
+
+### locking
+super + alt + l
+	notify-send "sxhkd works" && i3lock -c 000000

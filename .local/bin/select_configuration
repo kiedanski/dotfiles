@@ -1,15 +1,10 @@
-OPTIONS=$(cat <<-END
-	1. Screen
-	2. Audio
-END
-)
+#!/usr/bin/env bash
 
-SELECTION=$(echo "$OPTIONS" | rofi -dmenu)
+OPTIONS=$(printf "1. Screen\n2. Audio")
 
-echo $SELECTION
+SELECTION=$(echo "$OPTIONS" | rofi -dmenu -p "Config")
 
-case $SELECTION in
-	1*)	$(which select_display);;
-	2*)	echo "select audio";;
+case "$SELECTION" in
+    1*) select_display ;;
+    2*) select_audio   ;;
 esac
-

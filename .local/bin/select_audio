@@ -1,6 +1,129 @@
+#!/usr/bin/env bash
 
-sources=$(pactl list sources | grep -P '^\t\t\S.*:' | grep input)
-sinks=$(pactl list sinks | grep -P '^\t\t\S.*:' | grep output)
+# select_audio — rofi menu to switch audio profile (sink + source together)
+#
+# Static profiles: add entries as "Label|sink_node_name|source_node_name"
+# Bluetooth profiles are auto-detected from connected devices.
 
-echo $sources
-echo $sinks
+rofi_cmd="rofi -dmenu -i"
+
+# ── bluetooth device names ─────────────────────────────────────────────────────
+# Override auto-detected BT device names: MAC (underscores) -> display label
+declare -A BT_NAMES=(
+    ["AC_80_FB_7E_1C_4E"]="Galaxy Buds"
+)
+
+# ── static profiles ────────────────────────────────────────────────────────────
+# Format: "Label|sink_node_name|source_node_name"
+
+STATIC_PROFILES=(
+    "Laptop|alsa_output.pci-0000_00_1f.3-platform-skl_hda_dsp_generic.HiFi__hw_sofhdadsp__sink|alsa_input.pci-0000_00_1f.3-platform-skl_hda_dsp_generic.HiFi__hw_sofhdadsp_6__source|[Out] Speaker"
+    "Wired Headphones|alsa_output.pci-0000_00_1f.3-platform-skl_hda_dsp_generic.HiFi__hw_sofhdadsp__sink|alsa_input.pci-0000_00_1f.3-platform-skl_hda_dsp_generic.HiFi__hw_sofhdadsp__source|[Out] Headphones"
+    "HDMI 1|alsa_output.pci-0000_00_1f.3-platform-skl_hda_dsp_generic.HiFi__hw_sofhdadsp_3__sink|alsa_input.pci-0000_00_1f.3-platform-skl_hda_dsp_generic.HiFi__hw_sofhdadsp_6__source"
+)
+
+# ── helpers ────────────────────────────────────────────────────────────────────
+
+get_node_description() {
+    local type="$1"  # sinks or sources
+    local node="$2"
+    pactl list "${type}" | awk -v n="$node" '
+        /^\tName:/ && $2==n { found=1 }
+        found && /^\tDescription:/ { sub(/^\tDescription: /, ""); print; exit }
+    '
+}
+
+# Auto-detect Bluetooth profiles by pairing output+input with the same MAC
+bt_profiles() {
+    while read -r bt_sink; do
+        local mac
+        mac=$(echo "$bt_sink" | grep -oP 'bluez_output\.\K[^.]+')
+        # try the most common BT source suffixes
+        local bt_source=""
+        for suffix in headset-head-unit handsfree-head-unit; do
+            local candidate="bluez_input.${mac}.${suffix}"
+            if pactl list sources short | grep -q "$candidate"; then
+                bt_source="$candidate"
+                break
+            fi
+        done
+        # A2DP-only devices have no BT mic — fall back to laptop mic
+        if [[ -z "$bt_source" ]]; then
+            bt_source=$(pactl list sources short | awk '{print $2}' | grep -v monitor | grep -v bluez | head -1)
+            [[ -z "$bt_source" ]] && continue
+        fi
+
+        local label="${BT_NAMES[$mac]:-}"
+        [[ -z "$label" ]] && label=$(get_node_description sinks "$bt_sink")
+        echo "${label:-Bluetooth}|${bt_sink}|${bt_source}"
+    done < <(pactl list sinks short | awk '{print $2}' | grep bluez_output)
+}
+
+apply_profile() {
+    local sink="$1"
+    local source="$2"
+    local label="$3"
+    local port="$4"
+
+    pactl set-default-sink "$sink"
+    pactl set-default-source "$source"
+    [[ -n "$port" ]] && pactl set-sink-port "$sink" "$port"
+
+    # Move active streams to the new sink
+    pactl list short sink-inputs | awk '{print $1}' | while read -r stream; do
+        pactl move-sink-input "$stream" "$sink" 2>/dev/null || true
+    done
+
+    # Keep SimpleScreenRecorder in sync
+    local ssr_conf="$HOME/.ssr/settings.conf"
+    if [[ -f "$ssr_conf" ]]; then
+        sed -i "s|^audio_pulseaudio_source=.*|audio_pulseaudio_source=$source|" "$ssr_conf"
+    fi
+
+    notify-send "Audio" "Switched to: $label" -i audio-headphones
+}
+
+# ── build menu ─────────────────────────────────────────────────────────────────
+
+current_sink=$(pactl get-default-sink)
+current_source=$(pactl get-default-source)
+
+entries=""
+declare -A profile_map  # label -> "sink|source"
+
+add_entry() {
+    local label="$1" sink="$2" source="$3" port="$4"
+    local marker="  "
+    [[ "$sink" == "$current_sink" && "$source" == "$current_source" ]] && marker="* "
+    entries+="${marker}${label}\n"
+    profile_map["$label"]="${sink}|${source}|${port}"
+}
+
+# Add static profiles
+for p in "${STATIC_PROFILES[@]}"; do
+    IFS='|' read -r label sink source port <<< "$p"
+    add_entry "$label" "$sink" "$source" "$port"
+done
+
+# Add auto-detected BT profiles
+while IFS='|' read -r label sink source; do
+    add_entry "$label" "$sink" "$source"
+done < <(bt_profiles)
+
+# ── show menu & apply ──────────────────────────────────────────────────────────
+
+selected=$(printf "%b" "$entries" | $rofi_cmd -p "Audio Profile")
+[[ -z "$selected" ]] && exit 0
+
+# Strip leading marker
+label="${selected#\* }"
+label="${label#  }"
+
+pair="${profile_map[$label]}"
+sink="${pair%%|*}"
+rest="${pair#*|}"
+source="${rest%%|*}"
+port="${rest#*|}"
+[[ "$port" == "$source" ]] && port=""  # no port field was set
+
+apply_profile "$sink" "$source" "$label" "$port"

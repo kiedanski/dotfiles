@@ -4,11 +4,16 @@
 pgrep -x sxhkd > /dev/null || sxhkd &
 picom &
 nitrogen --restore &
+xss-lock -- i3lock -c 000000 &
+dunst & 
 
 # System tray applets (only start if not already running)
 pgrep -x nm-applet > /dev/null || nm-applet &
 pgrep -x blueman-applet > /dev/null || blueman-applet &
 pgrep -x 1password > /dev/null || 1password --silent &
+
+# Keyboard tweaks
+setxkbmap -option caps:hyper
 
 # Monitor and desktop setup (using autorandr)
 autorandr --change --default carbon --force
@@ -33,6 +38,8 @@ bspc config pointer_action2 resize_side
 bspc config pointer_action3 resize_corner
 
 # Window rules
+bspc rule -a scratchpad state=floating sticky=on rectangle=900x500+510+270
+bspc rule -a scratchpad-notes state=floating sticky=on rectangle=900x500+510+270
 bspc rule -a Gimp desktop='^8' state=floating follow=on
 bspc rule -a Firefox desktop='^2'
 bspc rule -a mplayer2 state=floating

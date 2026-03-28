@@ -16,3 +16,5 @@ vim.api.nvim_create_user_command('MakeConfig', function()
   print("✅ Created pyrightconfig.json")
 end, { desc = "Create pyrightconfig.json" })
 
+-- Timestamp abbreviation: type ;ts in insert mode to expand to current datetime
+vim.cmd([[iab <expr> _ts strftime("%F %b %T")]])
