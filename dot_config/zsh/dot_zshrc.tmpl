@@ -1,0 +1,33 @@
+# PATH setup
+export PATH=$HOME/.local/bin:$HOME/bin:/usr/local/bin:$PATH:$HOME/.cargo/bin:$HOME/.config/emacs/bin:$HOME/.opencode/bin:$HOME/.local/share/mise
+{{- if eq .chezmoi.os "darwin" }}
+export PATH="/opt/homebrew/bin:$PATH"
+{{- end }}
+
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_CACHE_HOME="$HOME/.cache"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_STATE_HOME="$HOME/.local/state"
+
+{{- if eq .chezmoi.os "linux" }}
+
+# Fix for IBus/input method duplicate key events (especially backspace in vim)
+export GLFW_IM_MODULE=
+export GTK_IM_MODULE=
+export QT_IM_MODULE=
+export XMODIFIERS=@im=none
+{{- end }}
+
+# Configure zsh
+export ZSH="$XDG_DATA_HOME/oh-my-zsh"
+export ZSH_CUSTOM="$XDG_CONFIG_HOME/zsh/custom"
+export ZSH_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ohmyzsh"
+export ZSH_COMPDUMP="$ZSH_CACHE_DIR/.zcompdump"
+
+export HISTFILE="$XDG_STATE_HOME"/zsh/history
+
+ZSH_THEME="robbyrussell"
+
+plugins=(git zsh-vi-mode taskwarrior)
+
+source $ZSH/oh-my-zsh.sh

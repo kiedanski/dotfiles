@@ -1,0 +1,48 @@
+#!/bin/sh
+
+# Autostart programs
+pgrep -x sxhkd > /dev/null || sxhkd &
+picom &
+nitrogen --restore &
+xss-lock -- i3lock -c 000000 &
+dunst & 
+
+# System tray applets (only start if not already running)
+pgrep -x nm-applet > /dev/null || nm-applet &
+pgrep -x blueman-applet > /dev/null || blueman-applet &
+pgrep -x 1password > /dev/null || 1password --silent &
+
+# Keyboard tweaks
+setxkbmap -option caps:hyper
+
+# Monitor and desktop setup (using autorandr)
+autorandr --change --default carbon --force
+
+# Window settings
+bspc config border_width         2
+bspc config window_gap          12
+bspc config split_ratio          0.52
+bspc config borderless_monocle   true
+bspc config gapless_monocle      true
+
+# Colors
+bspc config normal_border_color  "#44475a"
+bspc config active_border_color  "#bd93f9"
+bspc config focused_border_color "#ff79c6"
+bspc config presel_feedback_color "#6272a4"
+
+# Mouse settings
+bspc config pointer_modifier mod4
+bspc config pointer_action1 move
+bspc config pointer_action2 resize_side
+bspc config pointer_action3 resize_corner
+
+# Window rules
+bspc rule -a scratchpad state=floating sticky=on rectangle=900x500+510+270
+bspc rule -a scratchpad-notes state=floating sticky=on rectangle=900x500+510+270
+bspc rule -a Gimp desktop='^8' state=floating follow=on
+bspc rule -a Firefox desktop='^2'
+bspc rule -a mplayer2 state=floating
+bspc rule -a Kupfer.py focus=on
+bspc rule -a Screenkey manage=off
+bspc rule -a ZSTray state=tiled

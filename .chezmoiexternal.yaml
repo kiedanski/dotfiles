@@ -1,0 +1,43 @@
+".local/share/oh-my-zsh":
+  type: git-repo
+  url: "https://github.com/ohmyzsh/ohmyzsh.git"
+  refreshPeriod: "168h"
+  clone:
+    args: ["--depth", "1"]
+  pull:
+    args: ["--ff-only"]
+
+".config/zsh/custom/plugins/zsh-vi-mode":
+  type: git-repo
+  url: "https://github.com/jeffreytse/zsh-vi-mode.git"
+  refreshPeriod: "168h"
+  clone:
+    args: ["--depth", "1"]
+
+".config/zsh/plugins/fast-syntax-highlighting":
+  type: git-repo
+  url: "https://github.com/zdharma-continuum/fast-syntax-highlighting.git"
+  refreshPeriod: "168h"
+  clone:
+    args: ["--depth", "1"]
+
+".config/zsh/plugins/zsh-autosuggestions":
+  type: git-repo
+  url: "https://github.com/zsh-users/zsh-autosuggestions.git"
+  refreshPeriod: "168h"
+  clone:
+    args: ["--depth", "1"]
+
+".config/zsh/plugins/zsh-completions":
+  type: git-repo
+  url: "https://github.com/zsh-users/zsh-completions.git"
+  refreshPeriod: "168h"
+  clone:
+    args: ["--depth", "1"]
+
+".local/share/tmux/plugins/tpm":
+  type: git-repo
+  url: "https://github.com/tmux-plugins/tpm.git"
+  refreshPeriod: "168h"
+  clone:
+    args: ["--depth", "1"]

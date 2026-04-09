@@ -1,0 +1,36 @@
+README.md
+LICENSE
+
+# macOS-only files on Linux
+{{- if ne .chezmoi.os "darwin" }}
+Library/
+{{- end }}
+
+# Linux-only files on macOS
+{{- if ne .chezmoi.os "linux" }}
+.xinitrc
+{{- end }}
+
+# Desktop-only configs
+{{- if not .desktop }}
+.config/kitty/
+{{- end }}
+
+# Tiling WM configs (bspwm ecosystem)
+{{- if not .tiling_wm }}
+.config/bspwm/
+.config/sxhkd/
+.config/polybar/
+.xinitrc
+{{- end }}
+
+# Doom Emacs only on desktop
+{{- if not .desktop }}
+.config/doom/
+{{- end }}
+
+# Newsboat/podget only on desktop
+{{- if not .desktop }}
+.config/newsboat/
+.config/podget/
+{{- end }}

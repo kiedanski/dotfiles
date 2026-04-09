@@ -1,0 +1,14 @@
+Host azure
+    Hostname ssh.dev.azure.com
+    IdentityFile ~/.ssh/j68a777ea8a3e2.id_rsa
+    IdentitiesOnly yes # see NOTES below
+    AddKeysToAgent yes
+
+Host jarvis
+    User jarvis
+    Hostname 45.55.223.110
+
+Host pangolin
+    User root
+    IdentityFile ~/.ssh/id_rsa
+    Hostname 72.11.138.189

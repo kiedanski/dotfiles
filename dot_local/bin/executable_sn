@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+
+NOTES_FOLDER="/Users/rebelde/Dropbox/notes"
+
+pushd $NOTES_FOLDER
+
+_file=$(
+    (rg --color ansi --line-number --no-heading --smart-case "${@:-^[^\n]}" \
+    | fzf --ansi -d ':' --preview 'bat --color=always --style=numbers $(cut -d: -f1 <<< {1}) --highlight-line {2}  --line-range={2}:+20' \
+    --preview-window='50%' --height='100%' --with-nth 1,3.. --exact)
+)
+
+exit_code=$?
+
+
+if [[ $exit_code -eq 0 || $exit_code -eq 1 ]]; then
+    _file="${_file%%:*}"
+    [ -z "$_file" ] && _file="$NOTES_FOLDER/$(date +%Y%m%d%H%M%S).md" && touch "$_file"
+    exec $EDITOR "$_file"
+fi
+
+popd > /dev/null

@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+ILS="2024-11-27"
+ILE="2024-12-28"
+
+THIS_MONTH=$(date +"%Y-%m")
+NEXT_MONTH=$(date +"%Y-%m" --date="$(date +%Y-%m-01) next month")
+
+if [[ "$@" == "last" ]]; then
+
+	NEXT_MONTH=$(date +"%Y-%m")
+	THIS_MONTH=$(date +"%Y-%m" --date="$(date +%Y-%m-01) last month")
+	ILS="2024-10-29"
+	ILE="2024-11-27"
+fi
+
+hledger bal ^liabilities:creditcards:itau -b $ILS -e $ILE not:tag:payment | head -n 3
+
+hledger bal ^assets:banks:itau -e $NEXT_MONTH | head -n 3
+
+hledger bal --budget -b $THIS_MONTH -e $NEXT_MONTH -X USD

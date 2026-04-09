@@ -1,0 +1,32 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "logLevel": "DEBUG",
+   "permission": {
+    "skill": {
+      "*": "allow"
+    }
+  },
+  "mcp": {
+    "linear": {
+      "type": "remote",
+      "url": "https://mcp.linear.app/mcp",
+      "enabled": true
+      },
+    "fireflies": {
+      "type": "remote",
+      "url": "https://api.fireflies.ai/mcp",
+      "enabled": true
+      },
+    "notion": {
+      "type": "remote",
+      "url": "https://mcp.notion.com/mcp",
+      "enabled": true
+    },
+    "zapier": {
+        "type": "remote",
+        "url": "https://mcp.zapier.com/api/v1/connect",
+        "enabled": true
+
+    }
+  }
+}
