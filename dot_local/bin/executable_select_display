@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+OPTIONS=$(cat <<- END
+	1. Single Screen
+	2. Dual Screen
+END
+)
+
+get_connected_external_displays() {
+  xrandr -q | grep " connected" | grep -v "eDP-1" | awk '{ print $1 }'
+}
+
+# Get connected external displays
+CONNECTED_EXTERNAL_DISPLAYS=$(get_connected_external_displays)
+echo $CONNECTED_EXTERNAL_DISPLAYS
+export DP_OUTPUT=$CONNECTED_EXTERNAL_DISPLAYS
+
+
+function multi_display {
+
+  killall -q polybar
+  xrandr --output eDP-1 --primary --mode 2048x1152 --auto --output $DP_OUTPUT --auto --right-of eDP-1
+  bspc monitor eDP-1 -d I II III IV
+  bspc monitor $DP_OUTPUT -d V VI VII VIII
+  
+  echo "---" | tee -a /tmp/polybar_primary.log /tmp/polybar_secondary.log
+  polybar internal | tee -a /tmp/polybar_primary.log & disown
+  polybar external | tee -a /tmp/polybar_secondary.log & disown
+
+}
+
+function single_display {
+
+  killall -q polybar
+  xrandr --output eDP-1 --primary --mode 2048x1152 --auto
+  xrandr --output $DP_OUTPUT --off
+  bspc monitor eDP-1 -d I II III IV V VI VII VIII
+
+  echo "---" | tee -a /tmp/polybar_config.log
+  polybar default | tee -a /tmp/polybar_config.log & disown
+
+}
+
+echo "$1"
+if [[ $# -eq 0 ]]; then
+	echo "Entre"
+	SELECTION=$(echo "$OPTIONS" | rofi -dmenu)
+else
+	SELECTION="$1"
+fi
+
+echo "$SELECTION"
+
+case $SELECTION in 
+	1*) single_display;;
+	2*) multi_display;;
+	* ) echo "Invalid Option";;
+esac

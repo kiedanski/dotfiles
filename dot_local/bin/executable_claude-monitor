@@ -1,0 +1,51 @@
+#!/bin/bash
+# Claude waiting monitor - sends macOS notifications when Claude is waiting for input
+
+WAIT_THRESHOLD=30  # Seconds to wait before notifying
+CHECK_INTERVAL=5   # How often to check
+
+# Track waiting state
+declare -A waiting_since
+
+while true; do
+    current_time=$(date +%s)
+
+    # Check all panes in all tmux sessions
+    if tmux list-sessions &>/dev/null; then
+        tmux list-panes -a -F "#{session_name}:#{window_index}.#{pane_index} #{pane_current_command}" | \
+        while read -r pane_id pane_command; do
+            # Only check panes running claude
+            if [[ "$pane_command" != "claude" ]]; then
+                continue
+            fi
+
+            # Capture pane content
+            content=$(tmux capture-pane -p -t "$pane_id" 2>/dev/null)
+
+            # Check if Claude is waiting for input
+            if echo "$content" | grep -qE "Press Enter|continue|Enter to confirm|waiting|\(y/n\)|Proceed\?"; then
+                # Claude is waiting
+                if [[ -z "${waiting_since[$pane_id]}" ]]; then
+                    # Just started waiting
+                    waiting_since[$pane_id]=$current_time
+                else
+                    # Check how long it's been waiting
+                    wait_duration=$((current_time - waiting_since[$pane_id]))
+
+                    if [ $wait_duration -ge $WAIT_THRESHOLD ]; then
+                        # Send notification (only once per waiting session)
+                        if [[ "${waiting_since[$pane_id]}" != "notified" ]]; then
+                            osascript -e "display notification \"Claude is waiting for input in $pane_id\" with title \"Claude Code\" sound name \"Glass\""
+                            waiting_since[$pane_id]="notified"
+                        fi
+                    fi
+                fi
+            else
+                # Claude not waiting, reset
+                unset waiting_since[$pane_id]
+            fi
+        done
+    fi
+
+    sleep $CHECK_INTERVAL
+done

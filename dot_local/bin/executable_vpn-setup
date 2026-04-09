@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# VPN Setup - Disable autostart for all VPNs
+
+if [ "$EUID" -ne 0 ]; then
+    echo "Rerunning with sudo..."
+    exec sudo "$0" "$@"
+fi
+
+echo "Disabling autostart for all VPNs..."
+echo
+
+# Disable Zscaler
+echo "• Disabling Zscaler autostart..."
+systemctl disable zsaservice 2>/dev/null || true
+
+# Disable Tailscale
+echo "• Disabling Tailscale autostart..."
+systemctl disable tailscaled 2>/dev/null || true
+
+echo
+echo "✓ All VPN autostarts disabled"
+echo
+echo "VPNs will NOT start automatically on boot."
+echo "Use 'vpn' command to start them manually when needed."

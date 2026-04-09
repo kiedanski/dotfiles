@@ -1,0 +1,26 @@
+#!/bin/bash
+# Bootstrap: retrieve age key from 1Password on first run
+# This script runs once before chezmoi applies encrypted files
+
+set -e
+
+AGE_KEY="{{ .chezmoi.homeDir }}/.config/chezmoi/key.txt"
+
+if [ -f "$AGE_KEY" ]; then
+  echo "Age key already exists at $AGE_KEY"
+  exit 0
+fi
+
+echo "Retrieving age encryption key from 1Password..."
+
+if ! command -v op &> /dev/null; then
+  echo "ERROR: 1Password CLI (op) is not installed."
+  echo "Install it from: https://developer.1password.com/docs/cli/get-started/"
+  exit 1
+fi
+
+mkdir -p "$(dirname "$AGE_KEY")"
+op read "op://{{ .op_vault }}/chezmoi age key/notesPlain" | grep -v "^Public key:" > "$AGE_KEY"
+chmod 600 "$AGE_KEY"
+
+echo "Age key saved to $AGE_KEY"

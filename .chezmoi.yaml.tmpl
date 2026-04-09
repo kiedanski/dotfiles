@@ -1,0 +1,20 @@
+{{- $name := promptStringOnce . "name" "Full name" "Diego Kiedanski" -}}
+{{- $email := promptStringOnce . "email" "Email address" "diego@runllama.ai" -}}
+{{- $desktop := promptBoolOnce . "desktop" "Is this a desktop/GUI machine" true -}}
+{{- $tiling_wm := false -}}
+{{- if $desktop -}}
+{{-   $tiling_wm = promptBoolOnce . "tiling_wm" "Use tiling WM (bspwm/sxhkd/polybar)" false -}}
+{{- end -}}
+{{- $op_vault := promptStringOnce . "op_vault" "1Password vault for chezmoi secrets" "Chezmoi" -}}
+
+encryption: age
+age:
+  identity: {{ .chezmoi.homeDir }}/.config/chezmoi/key.txt
+  recipient: "age1kjfcpkuvdfpkzypxc43ksexhehl7vahf9wc97htzezj3cly5ge4s505a83"
+
+data:
+  name: {{ $name | quote }}
+  email: {{ $email | quote }}
+  desktop: {{ $desktop }}
+  tiling_wm: {{ $tiling_wm }}
+  op_vault: {{ $op_vault | quote }}
