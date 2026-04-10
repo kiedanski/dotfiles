@@ -1,0 +1,25 @@
+#!/bin/bash
+# Watch chezmoi-managed files and auto re-add on change
+# Usage: chezmoi-watch (runs in foreground)
+#        chezmoi-watch --daemon (runs in background)
+
+set -e
+
+if [ "$1" = "--daemon" ]; then
+  nohup "$0" > /tmp/chezmoi-watch.log 2>&1 &
+  echo "chezmoi-watch started (pid $!), log at /tmp/chezmoi-watch.log"
+  exit 0
+fi
+
+echo "Watching chezmoi-managed files for changes..."
+
+# Get list of managed files (absolute paths), excluding externals and templates
+chezmoi managed --path-style absolute 2>/dev/null | while read -r f; do
+  [ -f "$f" ] && echo "$f"
+done | fswatch -0 --event Updated --event Created --event Renamed -l 1 | while read -d '' changed; do
+  # Skip if the change came from chezmoi itself (check mtime of source vs target)
+  echo "[$(date +%H:%M:%S)] Changed: $changed"
+  chezmoi re-add "$changed" 2>/dev/null && \
+    echo "[$(date +%H:%M:%S)] Synced back to chezmoi source" || \
+    echo "[$(date +%H:%M:%S)] Skipped (template or external)"
+done
