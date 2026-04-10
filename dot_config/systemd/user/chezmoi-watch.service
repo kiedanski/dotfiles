@@ -1,0 +1,11 @@
+[Unit]
+Description=Watch chezmoi-managed files and auto re-add on change
+After=default.target
+
+[Service]
+ExecStart=%h/.local/bin/chezmoi-watch
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

@@ -34,3 +34,8 @@ Library/
 .config/newsboat/
 .config/podget/
 {{- end }}
+
+# systemd only on Linux
+{{- if ne .chezmoi.os "linux" }}
+.config/systemd/
+{{- end }}
