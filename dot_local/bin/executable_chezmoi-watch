@@ -1,25 +1,46 @@
 #!/bin/bash
 # Watch chezmoi-managed files and auto re-add on change
-# Usage: chezmoi-watch (runs in foreground)
-#        chezmoi-watch --daemon (runs in background)
+# Works on macOS (fswatch) and Linux (inotifywait)
 
 set -e
 
-if [ "$1" = "--daemon" ]; then
-  nohup "$0" > /tmp/chezmoi-watch.log 2>&1 &
-  echo "chezmoi-watch started (pid $!), log at /tmp/chezmoi-watch.log"
-  exit 0
+echo "Building watch list..."
+
+WATCH_PATHS=()
+while IFS= read -r f; do
+  [ -f "$f" ] && WATCH_PATHS+=("$f")
+done < <(chezmoi managed --path-style absolute 2>/dev/null)
+
+if [ ${#WATCH_PATHS[@]} -eq 0 ]; then
+  echo "No managed files found, exiting."
+  exit 1
 fi
 
-echo "Watching chezmoi-managed files for changes..."
+echo "Watching ${#WATCH_PATHS[@]} managed files for changes..."
 
-# Get list of managed files (absolute paths), excluding externals and templates
-chezmoi managed --path-style absolute 2>/dev/null | while read -r f; do
-  [ -f "$f" ] && echo "$f"
-done | fswatch -0 --event Updated --event Created --event Renamed -l 1 | while read -d '' changed; do
-  # Skip if the change came from chezmoi itself (check mtime of source vs target)
-  echo "[$(date +%H:%M:%S)] Changed: $changed"
-  chezmoi re-add "$changed" 2>/dev/null && \
-    echo "[$(date +%H:%M:%S)] Synced back to chezmoi source" || \
-    echo "[$(date +%H:%M:%S)] Skipped (template or external)"
-done
+if command -v fswatch &> /dev/null; then
+  # macOS
+  fswatch -0 --event Updated --event Created --event Renamed -l 2 "${WATCH_PATHS[@]}" | while read -d '' changed; do
+    echo "[$(date +%H:%M:%S)] Changed: $changed"
+    if chezmoi re-add "$changed" 2>/dev/null; then
+      echo "[$(date +%H:%M:%S)] Synced to chezmoi source"
+    else
+      echo "[$(date +%H:%M:%S)] Skipped (template or external)"
+    fi
+  done
+elif command -v inotifywait &> /dev/null; then
+  # Linux
+  inotifywait -m -e modify,create --format '%w' "${WATCH_PATHS[@]}" | while read changed; do
+    echo "[$(date +%H:%M:%S)] Changed: $changed"
+    if chezmoi re-add "$changed" 2>/dev/null; then
+      echo "[$(date +%H:%M:%S)] Synced to chezmoi source"
+    else
+      echo "[$(date +%H:%M:%S)] Skipped (template or external)"
+    fi
+  done
+else
+  echo "ERROR: Neither fswatch nor inotifywait found."
+  echo "  macOS: brew install fswatch"
+  echo "  Linux: sudo apt install inotify-tools"
+  exit 1
+fi

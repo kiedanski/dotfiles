@@ -1,0 +1,28 @@
+#!/bin/bash
+# Enable chezmoi-watch service after apply
+# run_onchange_ means it only runs when this script's content changes
+
+set -e
+
+{{ if eq .chezmoi.os "linux" -}}
+# Linux: enable systemd user service
+if command -v systemctl &> /dev/null; then
+  echo "Enabling chezmoi-watch systemd service..."
+  systemctl --user daemon-reload
+  systemctl --user enable chezmoi-watch.service
+  systemctl --user restart chezmoi-watch.service
+  echo "chezmoi-watch service started"
+fi
+
+# Ensure inotify-tools is installed
+if ! command -v inotifywait &> /dev/null; then
+  echo "NOTE: Install inotify-tools for chezmoi-watch to work:"
+  echo "  sudo apt install inotify-tools"
+fi
+{{ else if eq .chezmoi.os "darwin" -}}
+# macOS: LaunchAgent is loaded automatically, just ensure fswatch is available
+if ! command -v fswatch &> /dev/null; then
+  echo "NOTE: Install fswatch for chezmoi-watch to work:"
+  echo "  brew install fswatch"
+fi
+{{ end -}}
