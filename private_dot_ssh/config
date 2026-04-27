@@ -12,3 +12,8 @@ Host pangolin
     User root
     IdentityFile ~/.ssh/id_rsa
     Hostname 72.11.138.189
+
+Host dobby
+    User dobby
+    IdentityFile ~/.ssh/id_rsa
+    Hostname 192.168.8.188
