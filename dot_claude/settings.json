@@ -92,7 +92,7 @@
       "Bash(git rebase:*)",
       "Bash(bash:*)"
     ],
-    "defaultMode": "dontAsk"
+    "defaultMode": "default"
   },
   "enabledPlugins": {
     "voicemode@voicemode": true,
