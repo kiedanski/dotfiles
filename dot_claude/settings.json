@@ -111,6 +111,10 @@
     }
   },
   "effortLevel": "high",
+  "skipDangerousModePermissionPrompt": true,
   "voiceEnabled": true,
-  "skipDangerousModePermissionPrompt": true
+  "editorMode": "vim",
+  "preferredNotifChannel": "ghostty",
+  "autoCompactEnabled": false,
+  "remoteControlAtStartup": true
 }
