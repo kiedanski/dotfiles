@@ -19,5 +19,5 @@ Host dobby
     Hostname 192.168.8.188
 
 Host tilde
-    User root
+    User tilde
     Hostname 178.105.170.67
