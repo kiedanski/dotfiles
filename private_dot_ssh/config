@@ -17,3 +17,7 @@ Host dobby
     User dobby
     IdentityFile ~/.ssh/id_rsa
     Hostname 192.168.8.188
+
+Host tilde
+    User root
+    Hostname 178.105.170.67
