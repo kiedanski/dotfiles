@@ -92,7 +92,7 @@
       "Bash(git rebase:*)",
       "Bash(bash:*)"
     ],
-    "defaultMode": "default"
+    "defaultMode": "auto"
   },
   "enabledPlugins": {
     "voicemode@voicemode": true,
@@ -117,5 +117,6 @@
   "autoCompactEnabled": false,
   "remoteControlAtStartup": true,
   "agentPushNotifEnabled": true,
-  "voiceEnabled": true
+  "voiceEnabled": true,
+  "skipAutoPermissionPrompt": true
 }
