@@ -21,3 +21,7 @@ Host dobby
 Host tilde
     User diego
     Hostname 178.105.170.67
+
+Host pi3
+    User pi3
+    Hostname 192.168.8.143
