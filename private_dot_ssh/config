@@ -24,4 +24,4 @@ Host tilde
 
 Host pi3
     User pi3
-    Hostname 192.168.8.143
+    Hostname 100.114.86.77
