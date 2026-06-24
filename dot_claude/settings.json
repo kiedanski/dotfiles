@@ -115,9 +115,10 @@
   "editorMode": "vim",
   "preferredNotifChannel": "ghostty",
   "autoCompactEnabled": false,
+  "remoteControlAtStartup": true,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
   "voiceEnabled": true,
-  "remoteControlAtStartup": true
+  "skipWorkflowUsageWarning": true
 }
