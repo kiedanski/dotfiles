@@ -25,3 +25,7 @@ Host tilde
 Host pi3
     User pi3
     Hostname 100.114.86.77
+
+Host fde-box
+    User fde
+    Hostname fde-box.tail110ee.ts.net
