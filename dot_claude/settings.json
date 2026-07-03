@@ -94,7 +94,6 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "claude-fable-5[1m]",
   "enabledPlugins": {
     "voicemode@voicemode": true,
     "slack@claude-plugins-official": true,
