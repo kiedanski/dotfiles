@@ -80,6 +80,22 @@ return {
           },
         },
       })
+
+      -- Rust LSP (rust-analyzer installed via rustup; uses clippy for linting)
+      vim.lsp.config("rust_analyzer", {
+        capabilities = capabilities,
+        settings = {
+          ["rust-analyzer"] = {
+            -- Lint on save with clippy instead of plain `cargo check`
+            checkOnSave = true,
+            check = { command = "clippy" },
+            cargo = { allFeatures = true },
+            procMacro = { enable = true },
+            diagnostics = { enable = true },
+          },
+        },
+      })
+      vim.lsp.enable("rust_analyzer")
     end,
   },
 }
