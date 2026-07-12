@@ -9,7 +9,7 @@ return {
   config = function()
     require("nvim-treesitter.configs").setup({
       -- ONLY essential parsers
-      ensure_installed = { "python", "lua", "vim", "markdown" },
+      ensure_installed = { "python", "lua", "vim", "markdown", "rust" },
       sync_install = false,
       auto_install = false,  -- Disable auto-install
       highlight = {
