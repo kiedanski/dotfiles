@@ -1,0 +1,24 @@
+#!/bin/sh
+# Print $1 on the bar only in tablet mode. Used by the launcher (☰) and the
+# on-screen-keyboard (⌨) polybar modules.
+#
+# With a Type Cover attached both buttons are clutter: `super + d` opens rofi and
+# `hyper + k` toggles onboard. With no keyboard they are the only way in — the
+# hotkeys are unreachable and touchegg's 4-finger gesture is undiscoverable.
+#
+# The empty line is load-bearing. polybar's custom/script only updates a module
+# when the script writes a line: print nothing and polybar keeps whatever it
+# displayed last. Both modules used to `tablet-mode && echo <glyph>`, which
+# printed nothing in exactly the case polybar needed to act on, so a bar that
+# started in tablet mode kept a stale glyph pinned to it forever once the Type
+# Cover was attached — only a polybar restart cleared it. That is why one script
+# takes the glyph as an argument instead of two near-identical copies: the trap
+# is subtle enough that it should only exist in one place.
+
+[ -n "$1" ] || { echo "usage: ${0##*/} <glyph>" >&2; exit 2; }
+
+if tablet-mode; then
+    printf '%s\n' "$1"
+else
+    echo
+fi

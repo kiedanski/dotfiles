@@ -112,9 +112,11 @@ click-right = pavucontrol
 [module/launcher]
 ; Tap target for the launcher, shown ONLY in tablet mode: with a Type Cover
 ; attached `super + d` does the job and the button is just clutter. The script
-; prints nothing when a keyboard is present, which collapses the module away.
+; prints an empty line when a keyboard is present, which collapses the module to
+; zero width — it must not print nothing at all, or polybar keeps the last glyph
+; on the bar. See polybar-tablet-glyph.
 type = custom/script
-exec = ~/.local/bin/polybar-launcher
+exec = ~/.local/bin/polybar-tablet-glyph ☰
 interval = 5
 format-foreground = ${colors.primary}
 format-padding = 2
@@ -125,10 +127,11 @@ click-right = rofi -show window
 ; Tap target for the on-screen keyboard. The hyper+k binding and the 4-finger
 ; gesture both exist, but a hotkey is useless with no keyboard attached and a
 ; gesture is undiscoverable — a visible button on the bar is the reliable way in.
-; A script, not custom/text, so it can hide itself when a Type Cover is
-; attached — same as the launcher. Also drops the deprecated `content` key.
+; A script rather than custom/text so it can hide itself when a Type Cover is
+; attached, same as the launcher — custom/text has no way to do that, and its
+; `content` key is deprecated anyway.
 type = custom/script
-exec = ~/.local/bin/polybar-osk
+exec = ~/.local/bin/polybar-tablet-glyph ⌨
 interval = 5
 format-padding = 2
 format-foreground = ${colors.primary}
