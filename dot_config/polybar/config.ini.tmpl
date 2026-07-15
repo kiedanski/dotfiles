@@ -125,10 +125,13 @@ click-right = rofi -show window
 ; Tap target for the on-screen keyboard. The hyper+k binding and the 4-finger
 ; gesture both exist, but a hotkey is useless with no keyboard attached and a
 ; gesture is undiscoverable — a visible button on the bar is the reliable way in.
-type = custom/text
-content = ⌨
-content-padding = 2
-content-foreground = ${colors.primary}
+; A script, not custom/text, so it can hide itself when a Type Cover is
+; attached — same as the launcher. Also drops the deprecated `content` key.
+type = custom/script
+exec = ~/.local/bin/polybar-osk
+interval = 5
+format-padding = 2
+format-foreground = ${colors.primary}
 click-left = osk-toggle
 
 [module/wlan]

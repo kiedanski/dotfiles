@@ -1,0 +1,16 @@
+#!/bin/sh
+# Print the on-screen-keyboard glyph only in tablet mode.
+#
+# With a Type Cover attached the button is clutter: you already have a real
+# keyboard, and hyper+k covers the rare case. With no keyboard it is the
+# reliable way in — the hotkey is useless and the 4-finger gesture is
+# undiscoverable.
+#
+# Prints an EMPTY LINE rather than nothing when a keyboard is attached; see
+# polybar-launcher for why that distinction matters to polybar.
+
+if tablet-mode; then
+    echo "⌨"
+else
+    echo
+fi
