@@ -44,6 +44,13 @@ pgrep -f surface-autorotate > /dev/null || surface-autorotate &
 # every machine; without ||true a missing profile aborts the rest of this script.
 autorandr --change --default carbon --force 2>/dev/null || true
 
+# Create desktops if autorandr's postswitch hooks didn't. Those hooks are not in
+# this repo, so bspwm was left with its single default "Desktop" and the
+# `super + {1-9,0}` bindings (bspc desktop -f '^N') had nothing to switch to.
+if [ "$(bspc query -D | wc -l)" -le 1 ]; then
+    bspc monitor -d 1 2 3 4 5 6 7 8 9 10
+fi
+
 # Window settings
 {{- if $tablet }}
 # Fatter borders on the tablet: a 2px border is impossible to hit with a finger.
