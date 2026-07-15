@@ -1,0 +1,16 @@
+#!/bin/sh
+# Exit 0 when in tablet mode (no physical keyboard attached), 1 otherwise.
+#
+# "AT Translated Set 2 keyboard" is the built-in i8042 controller and is present
+# even with the Type Cover detached, so it must not count as a real keyboard —
+# the same exception onboard's auto-show needs.
+#
+# Used by the polybar launcher module and anything else that should only appear
+# when there's no keyboard.
+
+xinput list --name-only 2>/dev/null \
+  | grep -i 'keyboard' \
+  | grep -viE 'virtual|consumer|control|touchpad|mouse|AT Translated Set 2 keyboard' \
+  | grep -q . && exit 1
+
+exit 0

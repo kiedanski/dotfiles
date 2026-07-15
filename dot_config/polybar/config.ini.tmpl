@@ -35,9 +35,14 @@ font-1 = "Font Awesome 7 Free:size={{ $fs }};3"
 font-2 = "Font Awesome 7 Free Solid:size={{ $fs }};3"
 font-3 = "Noto Color Emoji:style=Regular:scale=10;3"
 
-modules-left = bspwm xwindow
+{{- /* Tablet gets a tappable launcher button ahead of the desktop list.
+       xwindow (the focused window's title) is dropped on the tablet: at up to 60
+       characters it pushed the right-hand group off a 1920px bar and clipped the
+       clock. The title bar of the window already says what the window is. */}}
+modules-left = {{ if $tablet }}launcher {{ end }}bspwm{{ if not $tablet }} xwindow{{ end }}
 modules-center = 
-modules-right = filesystem memory cpu pulseaudio wlan battery powerdraw date
+{{- /* The tablet gets a tappable on-screen-keyboard button; other machines don't need one. */}}
+modules-right = {{ if $tablet }}osk {{ end }}filesystem memory cpu pulseaudio wlan battery powerdraw date
 
 
 cursor-click = pointer
@@ -91,7 +96,9 @@ label = %percentage%%
 [module/date]
 type = internal/date
 interval = 5
-date = %b %d %a
+; Weekday dropped: with a long SSID the right group overflowed 1920px and
+; polybar clipped the clock off the edge.
+date = %b %d
 time = %H:%M
 label = 📅 %date% %time%
 
@@ -103,6 +110,28 @@ label-muted = 🔇 muted
 label-muted-foreground = ${colors.background-alt}
 click-right = pavucontrol
 
+[module/launcher]
+; Tap target for the launcher, shown ONLY in tablet mode: with a Type Cover
+; attached `super + d` does the job and the button is just clutter. The script
+; prints nothing when a keyboard is present, which collapses the module away.
+type = custom/script
+exec = ~/.local/bin/polybar-launcher
+interval = 5
+format-foreground = ${colors.primary}
+format-padding = 2
+click-left = rofi -show drun
+click-right = rofi -show window
+
+[module/osk]
+; Tap target for the on-screen keyboard. The hyper+k binding and the 4-finger
+; gesture both exist, but a hotkey is useless with no keyboard attached and a
+; gesture is undiscoverable — a visible button on the bar is the reliable way in.
+type = custom/text
+content = ⌨
+content-padding = 2
+content-foreground = ${colors.primary}
+click-left = osk-toggle
+
 [module/wlan]
 type = internal/network
 ; interface-type=wireless lets polybar find the wireless device itself, so this
@@ -111,7 +140,9 @@ interface-type = wireless
 interval = 5
 format-connected = <label-connected>
 format-disconnected = <label-disconnected>
-label-connected = 📶 %essid%
+; Truncated: long SSIDs (e.g. "fairfairphonephone") push the right group past
+; the screen edge and polybar clips whatever falls off.
+label-connected = 📶 %essid:0:12:…%
 label-disconnected = 📶 offline
 label-disconnected-foreground = ${colors.background-alt}
 

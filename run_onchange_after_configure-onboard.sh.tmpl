@@ -1,0 +1,59 @@
+#!/bin/bash
+# On-screen keyboard behaviour lives in dconf, not in a config file, so chezmoi
+# can't manage it declaratively — this script applies it after apply instead.
+#
+# Only meaningful on the tablet.
+{{- $model := output "sh" "-c" "cat /sys/class/dmi/id/product_name 2>/dev/null || echo unknown" | trim }}
+{{ if eq $model "Surface Go 2" -}}
+set -e
+
+command -v gsettings >/dev/null 2>&1 || exit 0
+command -v onboard   >/dev/null 2>&1 || exit 0
+
+# Pop the keyboard up when a text field is focused...
+gsettings set org.onboard.auto-show enabled true
+# ...but only when no physical keyboard is attached, i.e. actual tablet mode.
+gsettings set org.onboard.auto-show keyboard-device-detection-enabled true
+gsettings set org.onboard.auto-show hide-on-key-press true
+# "AT Translated Set 2 keyboard" is the built-in i8042 controller and is present
+# even with the Type Cover detached. Without this exception it always looks like
+# a physical keyboard is attached and auto-show never fires.
+gsettings set org.onboard.auto-show keyboard-device-detection-exceptions \
+    "['AT Translated Set 2 keyboard']"
+# Sit hidden until needed rather than opening a window at login.
+gsettings set org.onboard start-minimized true
+# onboard detects focused text fields over the accessibility bus; without this
+# auto-show never triggers.
+gsettings set org.gnome.desktop.interface toolkit-accessibility true
+
+# --- geometry ---
+# onboard rewrites its geometry keys when it exits, so it must not be running
+# while we set them, or it clobbers these values on the way out.
+pkill -x onboard 2>/dev/null || true
+for _ in 1 2 3 4 5 6 7 8; do pgrep -x onboard >/dev/null || break; sleep 1; done
+pkill -9 -x onboard 2>/dev/null || true
+sleep 1
+
+# Docking is deliberately OFF. When docked, onboard derives its height from the
+# layout's natural aspect ratio and ignores the height set here — that pinned it
+# to 205px on a 1280px-tall screen, i.e. ~4.7mm keys, too small to hit. Floating
+# with explicit geometry is honoured, giving ~9mm keys.
+gsettings set org.onboard.window docking-enabled false
+gsettings set org.onboard.window force-to-top true
+gsettings set org.onboard.window.landscape width  1920
+gsettings set org.onboard.window.landscape height 400
+gsettings set org.onboard.window.landscape x 0
+gsettings set org.onboard.window.landscape y 880
+gsettings set org.onboard.window.portrait width  1280
+gsettings set org.onboard.window.portrait height 500
+gsettings set org.onboard.window.portrait x 0
+gsettings set org.onboard.window.portrait y 1420
+
+# See through it to whatever you're typing into.
+gsettings set org.onboard.window transparency 30.0
+gsettings set org.onboard.window background-transparency 45.0
+gsettings set org.onboard.window enable-inactive-transparency true
+gsettings set org.onboard.window inactive-transparency 70.0
+
+echo "onboard: auto-show + 1920x400 floating geometry configured"
+{{ end -}}

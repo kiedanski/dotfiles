@@ -1,0 +1,79 @@
+{{- /* rofi. There was no rofi config in this repo at all, so it ran on defaults:
+       tiny rows that are hard to hit with a finger on the tablet. */ -}}
+{{- $model := output "sh" "-c" "cat /sys/class/dmi/id/product_name 2>/dev/null || echo unknown" | trim -}}
+{{- $tablet := eq $model "Surface Go 2" -}}
+{{- $font := 11 }}{{ if $tablet }}{{ $font = 14 }}{{ end }}
+configuration {
+    modi: "drun,run,window";
+    font: "JetBrainsMono Nerd Font {{ $font }}";
+    show-icons: true;
+    /* Qogir ships with EndeavourOS and is already installed; don't reference a
+       theme that isn't there (icons silently fall back to blanks). */
+    icon-theme: "Qogir";
+    drun-display-format: "{name}";
+    display-drun: "apps";
+    display-window: "windows";
+    display-run: "run";
+    sidebar-mode: false;
+    click-to-exit: true;
+    /* Type-to-filter is the fast path with a keyboard; with none attached you
+       scroll and tap, so keep the list short and the rows chunky. */
+    lines: {{ if $tablet }}8{{ else }}12{{ end }};
+    columns: 1;
+}
+
+* {
+    background-color: #282a36;
+    text-color:       #f8f8f2;
+    border-color:     #bd93f9;
+}
+
+window {
+    width:   {{ if $tablet }}80%{{ else }}40%{{ end }};
+    padding: 8px;
+    border:  2px;
+{{- if $tablet }}
+    /* Anchor to the top. The on-screen keyboard occupies the bottom 400px, and a
+       centred rofi sits right on top of it. onboard types via XTEST into whatever
+       holds focus, so stacking doesn't break input — but rofi covering the keys
+       makes it untypable. Keeping them at opposite edges avoids the fight. */
+    location: north;
+    anchor:   north;
+    y-offset: 60px;
+{{- end }}
+}
+
+inputbar {
+    padding:   {{ if $tablet }}12px{{ else }}6px{{ end }};
+    children:  [ prompt, entry ];
+}
+
+prompt {
+    padding: 0 8px 0 0;
+    text-color: #bd93f9;
+}
+
+listview {
+    spacing: {{ if $tablet }}6px{{ else }}2px{{ end }};
+    scrollbar: true;
+}
+
+element {
+    /* Generous vertical padding: this is the actual tap target. */
+    padding: {{ if $tablet }}14px{{ else }}6px{{ end }};
+}
+
+element selected {
+    background-color: #44475a;
+    text-color:       #ff79c6;
+}
+
+element-icon {
+    size: {{ if $tablet }}32px{{ else }}20px{{ end }};
+    padding: 0 10px 0 0;
+}
+
+scrollbar {
+    /* Wide enough to drag with a thumb. */
+    width: {{ if $tablet }}12px{{ else }}4px{{ end }};
+}

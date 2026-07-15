@@ -38,6 +38,11 @@ setxkbmap -option caps:hyper
 pgrep -x touchegg > /dev/null || touchegg &
 # Rotate screen AND touch input together from the accelerometer.
 pgrep -f surface-autorotate > /dev/null || surface-autorotate &
+# On-screen keyboard, started minimised. It must already be running for
+# auto-show to pop it up when a text field is focused; with
+# auto-show.keyboard-device-detection-enabled it stays out of the way whenever a
+# physical keyboard is attached.
+pgrep -x onboard > /dev/null || onboard &
 {{ end }}
 # Monitor and desktop setup (using autorandr)
 # NOTE: --default carbon refers to an autorandr profile that does not exist on

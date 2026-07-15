@@ -1,0 +1,8 @@
+#!/bin/sh
+# Print the launcher glyph only in tablet mode.
+#
+# With a Type Cover attached you have `super + d`, so the hamburger is just
+# clutter. With no keyboard it's the only way to reach the app launcher.
+# Printing nothing makes polybar collapse the module to zero width.
+
+tablet-mode && echo "☰"

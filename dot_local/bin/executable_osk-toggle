@@ -1,10 +1,29 @@
 #!/bin/sh
-# Toggle the on-screen keyboard. Bound to a hotkey AND usable from a touch gesture,
-# because on a tablet with no keyboard attached you cannot press the hotkey to get
-# a keyboard — the gesture is the way out of that loop.
+# Show/hide the on-screen keyboard.
+#
+# Bound to the polybar ⌨ button, `hyper + k`, and a 4-finger swipe up. The button
+# matters most: with no keyboard attached you cannot press a hotkey to summon a
+# keyboard.
+#
+# This toggles VISIBILITY over dbus rather than killing the process. onboard runs
+# permanently (minimised) so that auto-show can pop it up on focused text fields;
+# pkill'ing it would silently disable auto-show until the next login.
 
-if pgrep -x onboard >/dev/null 2>&1; then
-    pkill -x onboard
-else
-    onboard &
+DEST=org.onboard.Onboard
+OBJ=/org/onboard/Onboard/Keyboard
+IFACE=org.onboard.Onboard.Keyboard
+
+if dbus-send --session --dest=$DEST --print-reply=literal $OBJ $IFACE.ToggleVisible >/dev/null 2>&1; then
+    exit 0
 fi
+
+# Not running (or dbus name not up yet) — start it, then show it.
+if ! pgrep -x onboard >/dev/null 2>&1; then
+    onboard >/dev/null 2>&1 &
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+        sleep 0.3
+        dbus-send --session --dest=$DEST --print-reply=literal $OBJ $IFACE.Show >/dev/null 2>&1 && exit 0
+    done
+fi
+
+exit 0
