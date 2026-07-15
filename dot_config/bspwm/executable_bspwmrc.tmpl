@@ -21,7 +21,16 @@ fi
 # Status bar. Nothing else invoked launch.sh (the autorandr postswitch hook it
 # mentions does not exist here), so without this polybar simply never started.
 pgrep -x polybar > /dev/null || "$HOME/.config/polybar/launch.sh" &
+{{ if $tablet -}}
+# Lock via light-locker, which hands locking to the LightDM greeter — the only
+# lock screen here that has an on-screen keyboard (onscreen-keyboard=true in
+# slick-greeter.conf). i3lock takes an exclusive input grab, so onboard cannot
+# type into it: with the Type Cover detached, a single power-button suspend
+# would strand you on your own lock screen with no way to enter the password.
+pgrep -x light-locker > /dev/null || light-locker &
+{{- else }}
 xss-lock -- i3lock -c 000000 &
+{{- end }}
 dunst & 
 
 # System tray applets (only start if not already running)
