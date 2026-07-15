@@ -5,8 +5,11 @@
 {{- $dpi := 96 -}}
 {{- $cursor := 22 -}}
 {{- if eq $model "Surface Go 2" -}}
-{{-   $dpi = 144 -}}
-{{-   $cursor = 32 -}}
+{{- /* 96 is what X reports and is far too small on a ~220 DPI panel; 144 (1.5x)
+       overshot and felt oversized. 120 (1.25x) is the middle setting — bump this
+       one number to rescale every Xft-aware app at once. */ -}}
+{{-   $dpi = 120 -}}
+{{-   $cursor = 28 -}}
 {{- end -}}
 ! Machine detected at apply time: {{ $model }}
 Xft.dpi: {{ $dpi }}

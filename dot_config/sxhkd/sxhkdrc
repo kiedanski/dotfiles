@@ -2,9 +2,9 @@
 # wm independent hotkeys
 #
 
-# terminal emulator
+# terminal emulator — prefer ghostty, fall back to kitty where it isn't installed
 super + Return
-	kitty
+	sh -c 'command -v ghostty >/dev/null && exec ghostty || exec kitty'
 
 # NOTE: the scratchpad / scratchpad-notes bindings were removed — they pointed at
 # ~/.config/bspwm/scripts/{scratchpad,scratchpad-notes}, which this repo never shipped,

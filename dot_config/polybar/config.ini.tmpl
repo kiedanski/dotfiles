@@ -37,7 +37,7 @@ font-3 = "Noto Color Emoji:style=Regular:scale=10;3"
 
 modules-left = bspwm xwindow
 modules-center = 
-modules-right = filesystem memory cpu pulseaudio battery powerdraw date
+modules-right = filesystem memory cpu pulseaudio wlan battery powerdraw date
 
 
 cursor-click = pointer
@@ -102,6 +102,18 @@ label-volume = 🔊 %percentage%%
 label-muted = 🔇 muted
 label-muted-foreground = ${colors.background-alt}
 click-right = pavucontrol
+
+[module/wlan]
+type = internal/network
+; interface-type=wireless lets polybar find the wireless device itself, so this
+; works on machines whose interface isn't called wlan0.
+interface-type = wireless
+interval = 5
+format-connected = <label-connected>
+format-disconnected = <label-disconnected>
+label-connected = 📶 %essid%
+label-disconnected = 📶 offline
+label-disconnected-foreground = ${colors.background-alt}
 
 [module/powerdraw]
 type = custom/script
