@@ -37,7 +37,10 @@ setxkbmap -option caps:hyper
 # touchegg supplies gestures; 4-finger-up toggles the on-screen keyboard.
 pgrep -x touchegg > /dev/null || touchegg &
 # Rotate screen AND touch input together from the accelerometer.
-pgrep -f surface-autorotate > /dev/null || surface-autorotate &
+# Match the interpreter, not just the name: chezmoi-watch's inotifywait lists every
+# managed file on its command line — including this script — so a bare
+# `pgrep -f surface-autorotate` always found that and never started the real thing.
+pgrep -f 'bash .*/surface-autorotate' > /dev/null || surface-autorotate &
 # On-screen keyboard, started minimised. It must already be running for
 # auto-show to pop it up when a text field is focused; with
 # auto-show.keyboard-device-detection-enabled it stays out of the way whenever a

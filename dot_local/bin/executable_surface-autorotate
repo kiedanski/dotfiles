@@ -38,12 +38,23 @@ if ! command -v monitor-sensor >/dev/null 2>&1; then
     exit 1
 fi
 
-# Apply once at startup so we don't sit in a stale rotation until the first tilt.
-start=$(timeout 3 monitor-sensor 2>/dev/null | grep -m1 -oP 'orientation changed: \K.*')
-[ -n "$start" ] && set_orientation "$start"
-
+# One monitor-sensor for both the startup orientation and subsequent changes.
+#
+# It must be a single stream. A separate `timeout 3 monitor-sensor` probe used to
+# run first, but killing a client makes iio-sensor-proxy go away, and the
+# long-lived monitor-sensor started right after it then exited within ~30s and
+# took this whole script with it. That probe also never matched: at startup
+# monitor-sensor reports "=== Has accelerometer (orientation: normal, ...)" and
+# only says "orientation changed" once actually tilted, so the initial rotation
+# was never applied either.
 monitor-sensor 2>/dev/null | while read -r line; do
     case "$line" in
+        # Startup: "=== Has accelerometer (orientation: normal, tilt: vertical)"
+        *"Has accelerometer"*)
+            start="${line#*orientation: }"
+            set_orientation "${start%%,*}"
+            ;;
+        # Thereafter: "Accelerometer orientation changed: right-up"
         *"orientation changed"*)
             set_orientation "${line##*: }"
             ;;

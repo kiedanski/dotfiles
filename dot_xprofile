@@ -1,0 +1,16 @@
+#!/bin/sh
+# Sourced by LightDM's Xsession (/etc/lightdm/Xsession) before the window manager
+# starts. This is the only place a graphical-session PATH can be set on this box:
+#
+#   - .bashrc exports ~/.local/bin, but only runs for interactive shells, which
+#     the session never is.
+#   - .profile is sourced by Xsession but does not exist here.
+#   - .xinitrc is read by startx only, never by a display manager — and LightDM
+#     starts this session, so nothing in it applies (see the same note in bspwmrc).
+#
+# Without this, bspwm and everything it spawns (sxhkd, polybar) run with a PATH of
+# just /usr/bin:/bin:..., so bare calls to our own scripts die with "command not
+# found": tablet-mode (polybar launcher module), osk-toggle (polybar ⌨ button and
+# the hyper+k binding), select_configuration, surface-autorotate.
+
+export PATH="$HOME/.local/bin:$PATH"
