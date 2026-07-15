@@ -1,0 +1,51 @@
+#!/bin/bash
+# Auto-rotate the screen from the accelerometer, and rotate touch/stylus input to match.
+#
+# Rotating the display alone is not enough: X keeps mapping touch coordinates to the
+# unrotated panel, so taps land in the wrong place. Each orientation therefore also sets
+# a Coordinate Transformation Matrix on every touch device.
+#
+# Driven by monitor-sensor (iio-sensor-proxy), which prints lines like:
+#   Accelerometer orientation changed: right-up
+
+OUTPUT="${AUTOROTATE_OUTPUT:-eDP-1}"
+
+# Touch + stylus devices to remap. Matched by name so a re-plugged keyboard doesn't break it.
+touch_devices() {
+    xinput list --name-only 2>/dev/null | grep -iE 'ELAN.*(Stylus)?$|ELAN9038'
+}
+
+apply() {
+    local rotation="$1" matrix="$2"
+    xrandr --output "$OUTPUT" --rotate "$rotation" 2>/dev/null || return
+    while IFS= read -r dev; do
+        [ -z "$dev" ] && continue
+        xinput set-prop "$dev" "Coordinate Transformation Matrix" $matrix 2>/dev/null
+    done <<< "$(touch_devices)"
+}
+
+set_orientation() {
+    case "$1" in
+        normal)    apply normal   "1 0 0 0 1 0 0 0 1" ;;
+        left-up)   apply left     "0 -1 1 1 0 0 0 0 1" ;;
+        right-up)  apply right    "0 1 0 -1 0 1 0 0 1" ;;
+        bottom-up) apply inverted "-1 0 1 0 -1 1 0 0 1" ;;
+    esac
+}
+
+if ! command -v monitor-sensor >/dev/null 2>&1; then
+    echo "monitor-sensor not found — install iio-sensor-proxy" >&2
+    exit 1
+fi
+
+# Apply once at startup so we don't sit in a stale rotation until the first tilt.
+start=$(timeout 3 monitor-sensor 2>/dev/null | grep -m1 -oP 'orientation changed: \K.*')
+[ -n "$start" ] && set_orientation "$start"
+
+monitor-sensor 2>/dev/null | while read -r line; do
+    case "$line" in
+        *"orientation changed"*)
+            set_orientation "${line##*: }"
+            ;;
+    esac
+done

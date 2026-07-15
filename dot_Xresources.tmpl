@@ -1,0 +1,19 @@
+{{- /* X resources. HiDPI scaling is per-machine: the Surface Go 2 is a 10.5"
+       1920x1280 panel (~220 real DPI) that X otherwise reports as 96 DPI, making
+       everything roughly half-size and untappable. Other machines stay at 96. */ -}}
+{{- $model := output "sh" "-c" "cat /sys/class/dmi/id/product_name 2>/dev/null || echo unknown" | trim -}}
+{{- $dpi := 96 -}}
+{{- $cursor := 22 -}}
+{{- if eq $model "Surface Go 2" -}}
+{{-   $dpi = 144 -}}
+{{-   $cursor = 32 -}}
+{{- end -}}
+! Machine detected at apply time: {{ $model }}
+Xft.dpi: {{ $dpi }}
+Xcursor.size: {{ $cursor }}
+
+Xft.antialias: true
+Xft.hinting: true
+Xft.hintstyle: hintslight
+Xft.rgba: rgb
+Xft.lcdfilter: lcddefault

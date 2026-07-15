@@ -1,0 +1,13 @@
+[Unit]
+Description=Sync calendars and contacts with tilde
+Documentation=https://vdirsyncer.pimutils.org/
+# Don't hammer a dead network
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/vdirsyncer -v WARNING sync
+# vdirsyncer reads the password from ~/.config/vdirsyncer/config (mode 600),
+# rendered by chezmoi from 1Password at apply time — so this never prompts.
+Nice=10

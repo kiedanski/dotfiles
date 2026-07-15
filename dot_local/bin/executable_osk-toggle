@@ -1,0 +1,10 @@
+#!/bin/sh
+# Toggle the on-screen keyboard. Bound to a hotkey AND usable from a touch gesture,
+# because on a tablet with no keyboard attached you cannot press the hotkey to get
+# a keyboard — the gesture is the way out of that loop.
+
+if pgrep -x onboard >/dev/null 2>&1; then
+    pkill -x onboard
+else
+    onboard &
+fi

@@ -6,13 +6,9 @@
 super + Return
 	kitty
 
-# scratchpad terminal
-super + shift + Return
-	~/.config/bspwm/scripts/scratchpad
-
-# scratchpad notes
-hyper + n
-	~/.config/bspwm/scripts/scratchpad-notes
+# NOTE: the scratchpad / scratchpad-notes bindings were removed — they pointed at
+# ~/.config/bspwm/scripts/{scratchpad,scratchpad-notes}, which this repo never shipped,
+# so they silently did nothing. Re-add them together with the scripts.
 
 # program launcher
 super + d
@@ -26,13 +22,18 @@ super + backslash
 hyper + c
 	select_configuration
 
+# on-screen keyboard toggle (also bound to a 4-finger swipe up in touchegg,
+# since with no keyboard attached you cannot press a hotkey to summon one)
+hyper + k
+	osk-toggle
+
 # audio control panel
 super + a
 	pavucontrol
 
-# audio output switcher
-super + shift + a
-	$HOME/.config/rofi/scripts/audio-switcher.sh
+# NOTE: the audio-switcher binding was removed — it pointed at
+# $HOME/.config/rofi/scripts/audio-switcher.sh, which this repo never shipped
+# (there is no rofi config dir at all). `super + a` opens pavucontrol instead.
 
 # volume control
 XF86AudioRaiseVolume
@@ -182,5 +183,8 @@ super + {Left,Down,Up,Right}
 
 
 ### locking
-super + alt + l
-	notify-send "sxhkd works" && i3lock -c 000000
+# Was `super + alt + l`, which sxhkd never matched: it is shadowed by the
+# `super + alt + {h,j,k,l}` expand-window binding above, so locking silently
+# resized a window instead. `super + alt + shift + l` is taken too (contract).
+hyper + l
+	i3lock -c 000000

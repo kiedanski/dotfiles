@@ -1,0 +1,85 @@
+# neomutt — reads the local Maildir that mbsync keeps in sync with Purelymail.
+# No credentials live here: mbsync pulls, msmtp sends.
+
+set folder      = ~/.local/share/mail/purelymail
+set spoolfile   = +INBOX
+set mbox_type   = Maildir
+set header_cache     = ~/.cache/neomutt/headers
+set message_cachedir = ~/.cache/neomutt/bodies
+
+set realname = {{ .name | quote }}
+set from     = {{ .email | quote }}
+set use_from = yes
+set envelope_from = yes
+
+# Send via msmtp (which holds the credential, mode 600)
+set sendmail = "/usr/bin/msmtp"
+set sendmail_wait = 0
+
+# mbsync owns the remote; let it do the moving
+set move = no
+set delete = yes
+unset confirmappend
+set quit = yes
+set mark_old = no
+
+set sort = reverse-date-received
+set sort_aux = last-date-received
+set editor = "nvim"
+set edit_headers = yes
+set fast_reply = yes
+set include = yes
+set forward_quote = yes
+
+set charset = "utf-8"
+set text_flowed = yes
+unset markers
+
+# HTML mail -> readable text
+auto_view text/html
+alternative_order text/plain text/enriched text/html
+
+# Contacts come from khard (same tilde-synced vdir khal uses)
+set query_command = "khard email --parsable --search-in-source-files '%s'"
+bind editor <Tab> complete-query
+
+# vim-ish navigation
+# first-entry/last-entry exist only in the index; the pager equivalents are top/bottom.
+bind index,pager g  noop
+bind index gg first-entry
+bind index G  last-entry
+bind pager gg top
+bind pager G  bottom
+bind pager  j next-line
+bind pager  k previous-line
+bind index  J next-entry
+bind index  K previous-entry
+bind index,pager R group-reply
+bind index,pager \Cu half-up
+bind index,pager \Cd half-down
+
+# Sync mail without leaving neomutt
+macro index,pager O "<shell-escape>mbsync -a<enter>" "run mbsync to sync mail"
+macro index,pager \Cf "<pipe-message>urlscan<enter>" "extract URLs with urlscan"
+macro pager   \Cf "<pipe-message>urlscan<enter>" "extract URLs with urlscan"
+
+# Without an explicit `mailboxes` list the sidebar renders as an empty column.
+# These are the folders mbsync pulls from Purelymail.
+mailboxes =INBOX =Archive =Expenses =Sent =Drafts
+
+set sidebar_visible = yes
+set sidebar_width = 22
+set sidebar_short_path = yes
+set sidebar_format = "%B%<F? [%F]>%* %<N?%N/>%S"
+bind index,pager \Cp sidebar-prev
+bind index,pager \Cn sidebar-next
+bind index,pager \Co sidebar-open
+
+color normal     default default
+color indicator  black   cyan
+color status     black   white
+color tree       yellow  default
+# Neither `new` nor `index_new` is a valid color object in NeoMutt 2026.
+# Unread mail is coloured via the `index` object plus the ~N (new) pattern.
+color index      green   default "~N"
+color sidebar_new green  default

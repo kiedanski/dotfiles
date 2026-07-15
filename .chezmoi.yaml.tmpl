@@ -6,6 +6,7 @@
 {{-   $tiling_wm = promptBoolOnce . "tiling_wm" "Use tiling WM (bspwm/sxhkd/polybar)" false -}}
 {{- end -}}
 {{- $op_vault := promptStringOnce . "op_vault" "1Password vault for chezmoi secrets" "Chezmoi" -}}
+{{- $tilde_host := promptStringOnce . "tilde_host" "CalDAV/CardDAV host for calendars and contacts" "dav.example.com" -}}
 
 git:
   autoCommit: true
@@ -17,3 +18,4 @@ data:
   desktop: {{ $desktop }}
   tiling_wm: {{ $tiling_wm }}
   op_vault: {{ $op_vault | quote }}
+  tilde_host: {{ $tilde_host | quote }}

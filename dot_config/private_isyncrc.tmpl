@@ -1,0 +1,28 @@
+{{- /* mbsync (isync): pull Purelymail into a local Maildir for neomutt.
+     Password from 1Password at apply time — no OAuth needed (Purelymail is plain IMAP).
+     Referenced by ITEM ID, not title: two items are both titled "Purelymail"
+     (two different mailboxes), so a title ref is ambiguous. */ -}}
+IMAPAccount purelymail
+Host imap.purelymail.com
+Port 993
+User {{ .email }}
+Pass {{ onepasswordRead "op://Private/n44twyvw55ve5r5oy56i2gxmce/password" | quote }}
+TLSType IMAPS
+TLSVersions +1.2 +1.3
+CertificateFile /etc/ssl/certs/ca-certificates.crt
+
+IMAPStore purelymail-remote
+Account purelymail
+
+MaildirStore purelymail-local
+Subfolders Verbatim
+Path ~/.local/share/mail/purelymail/
+Inbox ~/.local/share/mail/purelymail/INBOX
+
+Channel purelymail
+Far :purelymail-remote:
+Near :purelymail-local:
+Patterns * !Trash !Spam !Junk
+Create Both
+Expunge Both
+SyncState *

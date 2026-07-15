@@ -1,0 +1,23 @@
+# khal — TUI calendar. Reads the local vdir that vdirsyncer keeps in sync with tilde.
+# No credentials here: vdirsyncer owns the network side.
+
+[calendars]
+
+[[personal]]
+path = ~/.local/share/calendars/*
+type = discover
+color = dark green
+
+[locale]
+timeformat = %H:%M
+dateformat = %Y-%m-%d
+longdateformat = %Y-%m-%d
+datetimeformat = %Y-%m-%d %H:%M
+longdatetimeformat = %Y-%m-%d %H:%M
+firstweekday = 0
+
+[default]
+# NOTE: with `type = discover` khal names each calendar after its directory,
+# so the collection synced from tilde is "default", not the [[personal]] label.
+default_calendar = default
+timedelta = 5d

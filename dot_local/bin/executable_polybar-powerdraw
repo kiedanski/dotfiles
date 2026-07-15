@@ -1,0 +1,30 @@
+#!/bin/sh
+# Report battery draw + estimated runtime for polybar.
+#
+# The old inline awk read BAT0/power_now + BAT0/energy_now. That is not portable:
+# this Surface exposes BAT1 and provides NEITHER power_now nor energy_now — only
+# charge_now/current_now/voltage_now. Derive the same numbers from whatever exists.
+#
+#   watts = power_now                     (if present)
+#         = current_now * voltage_now     (otherwise)
+#   Wh    = energy_now                    (if present)
+#         = charge_now * voltage_now      (otherwise)
+
+BAT=$(find /sys/class/power_supply -maxdepth 1 -name 'BAT*' 2>/dev/null | head -1)
+[ -z "$BAT" ] && exit 0
+
+read_or_zero() { [ -f "$1" ] && cat "$1" 2>/dev/null || echo 0; }
+
+power_now=$(read_or_zero "$BAT/power_now")
+energy_now=$(read_or_zero "$BAT/energy_now")
+current_now=$(read_or_zero "$BAT/current_now")
+charge_now=$(read_or_zero "$BAT/charge_now")
+voltage_now=$(read_or_zero "$BAT/voltage_now")
+
+awk -v p="$power_now" -v e="$energy_now" -v c="$current_now" -v ch="$charge_now" -v v="$voltage_now" 'BEGIN {
+    watts = (p > 0) ? p / 1e6 : (c * v) / 1e12
+    wh    = (e > 0) ? e / 1e6 : (ch * v) / 1e12
+    if (watts <= 0) { printf "0.0W"; exit }
+    t = wh / watts
+    printf "%.1fW (~%dh%02dm)", watts, int(t), int((t % 1) * 60)
+}'

@@ -1,0 +1,80 @@
+#!/bin/sh
+{{- $model := output "sh" "-c" "cat /sys/class/dmi/id/product_name 2>/dev/null || echo unknown" | trim }}
+{{- $tablet := eq $model "Surface Go 2" }}
+
+# Merge X resources (DPI, cursor size).
+# .xinitrc does this too, but display managers (LightDM here) never read .xinitrc —
+# without this, a greeter login silently drops HiDPI scaling and everything is tiny.
+[ -f "$HOME/.Xresources" ] && xrdb -merge "$HOME/.Xresources"
+
+# Autostart programs
+pgrep -x sxhkd > /dev/null || sxhkd &
+picom &
+# nitrogen was dropped: it needs GTK2, which Arch no longer ships.
+# Fall back to a solid colour so a missing wallpaper doesn't leave a black desktop.
+if [ -f "$HOME/.config/wallpaper" ]; then
+    feh --no-fehbg --bg-fill "$HOME/.config/wallpaper" &
+else
+    xsetroot -solid "#282a36" &
+fi
+
+# Status bar. Nothing else invoked launch.sh (the autorandr postswitch hook it
+# mentions does not exist here), so without this polybar simply never started.
+pgrep -x polybar > /dev/null || "$HOME/.config/polybar/launch.sh" &
+xss-lock -- i3lock -c 000000 &
+dunst & 
+
+# System tray applets (only start if not already running)
+pgrep -x nm-applet > /dev/null || nm-applet &
+pgrep -x blueman-applet > /dev/null || blueman-applet &
+pgrep -x 1password > /dev/null || 1password --silent &
+
+# Keyboard tweaks
+setxkbmap -option caps:hyper
+{{ if $tablet }}
+# --- Touch support ({{ $model }}) ---
+# bspwm is keyboard-driven, which is useless with the keyboard detached.
+# touchegg supplies gestures; 4-finger-up toggles the on-screen keyboard.
+pgrep -x touchegg > /dev/null || touchegg &
+# Rotate screen AND touch input together from the accelerometer.
+pgrep -f surface-autorotate > /dev/null || surface-autorotate &
+{{ end }}
+# Monitor and desktop setup (using autorandr)
+# NOTE: --default carbon refers to an autorandr profile that does not exist on
+# every machine; without ||true a missing profile aborts the rest of this script.
+autorandr --change --default carbon --force 2>/dev/null || true
+
+# Window settings
+{{- if $tablet }}
+# Fatter borders on the tablet: a 2px border is impossible to hit with a finger.
+bspc config border_width         6
+bspc config window_gap           8
+{{- else }}
+bspc config border_width         2
+bspc config window_gap          12
+{{- end }}
+bspc config split_ratio          0.52
+bspc config borderless_monocle   true
+bspc config gapless_monocle      true
+
+# Colors
+bspc config normal_border_color  "#44475a"
+bspc config active_border_color  "#bd93f9"
+bspc config focused_border_color "#ff79c6"
+bspc config presel_feedback_color "#6272a4"
+
+# Mouse settings
+bspc config pointer_modifier mod4
+bspc config pointer_action1 move
+bspc config pointer_action2 resize_side
+bspc config pointer_action3 resize_corner
+
+# Window rules
+bspc rule -a scratchpad state=floating sticky=on rectangle=900x500+510+270
+bspc rule -a scratchpad-notes state=floating sticky=on rectangle=900x500+510+270
+bspc rule -a Gimp desktop='^8' state=floating follow=on
+bspc rule -a Firefox desktop='^2'
+bspc rule -a mplayer2 state=floating
+bspc rule -a Kupfer.py focus=on
+bspc rule -a Screenkey manage=off
+bspc rule -a ZSTray state=tiled

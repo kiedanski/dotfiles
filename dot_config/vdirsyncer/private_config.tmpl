@@ -1,0 +1,40 @@
+{{- /* vdirsyncer: sync calendars + contacts from tilde (self-hosted personal cloud).
+     Password comes from 1Password at `chezmoi apply` time, same pattern as secrets.zsh.tmpl.
+     NOTE: tilde ignores the DAV username entirely — only the app-password is validated. */ -}}
+[general]
+status_path = "~/.local/share/vdirsyncer/status/"
+
+[pair tilde_calendar]
+a = "calendar_local"
+b = "calendar_remote"
+collections = ["from a", "from b"]
+conflict_resolution = "b wins"
+metadata = ["displayname", "color"]
+
+[storage calendar_local]
+type = "filesystem"
+path = "~/.local/share/calendars/"
+fileext = ".ics"
+
+[storage calendar_remote]
+type = "caldav"
+url = "https://{{ .tilde_host }}/caldav/"
+username = "admin"
+password = {{ onepasswordRead (printf "op://%s/Tilde surface tablet/password" "Tilde") | quote }}
+
+[pair tilde_contacts]
+a = "contacts_local"
+b = "contacts_remote"
+collections = ["from a", "from b"]
+conflict_resolution = "b wins"
+
+[storage contacts_local]
+type = "filesystem"
+path = "~/.local/share/contacts/"
+fileext = ".vcf"
+
+[storage contacts_remote]
+type = "carddav"
+url = "https://{{ .tilde_host }}/carddav/"
+username = "admin"
+password = {{ onepasswordRead (printf "op://%s/Tilde surface tablet/password" "Tilde") | quote }}

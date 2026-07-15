@@ -1,0 +1,17 @@
+{{- /* msmtp: outbound mail via Purelymail. Password from 1Password at apply time.
+     Item referenced by ID — two 1Password items share the title "Purelymail". */ -}}
+defaults
+auth           on
+tls            on
+tls_trust_file /etc/ssl/certs/ca-certificates.crt
+logfile        ~/.local/state/msmtp.log
+
+account        purelymail
+host           smtp.purelymail.com
+port           465
+tls_starttls   off
+from           {{ .email }}
+user           {{ .email }}
+password       {{ onepasswordRead "op://Private/n44twyvw55ve5r5oy56i2gxmce/password" | quote }}
+
+account default : purelymail
