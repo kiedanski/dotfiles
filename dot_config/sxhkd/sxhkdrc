@@ -186,5 +186,9 @@ super + {Left,Down,Up,Right}
 # Was `super + alt + l`, which sxhkd never matched: it is shadowed by the
 # `super + alt + {h,j,k,l}` expand-window binding above, so locking silently
 # resized a window instead. `super + alt + shift + l` is taken too (contract).
+# Prefer light-locker: it locks by switching to the LightDM greeter, which is the
+# only lock screen here with an on-screen keyboard. i3lock grabs all input, so
+# onboard cannot type into it and an unlock needs a physical keyboard. Falls back
+# to i3lock where light-locker is not running (non-LightDM machines).
 hyper + l
-	i3lock -c 000000
+	light-locker-command -l 2>/dev/null || i3lock -c 000000

@@ -27,7 +27,14 @@ pgrep -x polybar > /dev/null || "$HOME/.config/polybar/launch.sh" &
 # slick-greeter.conf). i3lock takes an exclusive input grab, so onboard cannot
 # type into it: with the Type Cover detached, a single power-button suspend
 # would strand you on your own lock screen with no way to enter the password.
-pgrep -x light-locker > /dev/null || light-locker &
+# Fall back to xss-lock rather than leaving the session with no locker at all if
+# light-locker is missing. The fallback is the keyboard-only trap described above,
+# so it is the wrong lock screen here — but an unlocked tablet is worse.
+if command -v light-locker > /dev/null; then
+    pgrep -x light-locker > /dev/null || light-locker --lock-on-suspend &
+else
+    pgrep -x xss-lock > /dev/null || xss-lock -- i3lock -c 000000 &
+fi
 {{- else }}
 xss-lock -- i3lock -c 000000 &
 {{- end }}
