@@ -39,3 +39,12 @@ Library/
 {{- if ne .chezmoi.os "linux" }}
 .config/systemd/
 {{- end }}
+
+# rclone tilde mount: the Surface only.
+# It caches to /card (the SD card), which exists on no other machine, and
+# .config/rclone/rclone.conf would clobber an unrelated rclone setup elsewhere.
+{{- $model := output "sh" "-c" "cat /sys/class/dmi/id/product_name 2>/dev/null || echo unknown" | trim }}
+{{- if ne $model "Surface Go 2" }}
+.config/rclone/
+.config/systemd/user/rclone-tilde-files.service
+{{- end }}

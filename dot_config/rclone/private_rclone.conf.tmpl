@@ -1,0 +1,18 @@
+{{- /* rclone: WebDAV access to tilde's file store, mounted at ~/files.
+
+     Rendered from 1Password at apply time, like the msmtp/isync/vdirsyncer
+     configs — the repo is public and only ever holds the op:// reference.
+
+     `pass` must be obscured: rclone.conf accepts nothing else. Obscuring is NOT
+     encryption and is trivially reversible, so the rendered file is a real
+     secret — hence private_ (mode 0600). Never commit it rendered.
+
+     The username is ignored entirely by tilde; only the app-password is
+     validated. "admin" is the convention. */ -}}
+{{- $pass := onepasswordRead (printf "op://%s/Tilde surface tablet/password" "Tilde") -}}
+[tilde-files]
+type = webdav
+url = https://{{ .tilde_host }}/dav/files/
+vendor = other
+user = admin
+pass = {{ output "rclone" "obscure" $pass | trim }}

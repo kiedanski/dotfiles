@@ -1,0 +1,24 @@
+#!/bin/bash
+# Enable the rclone tilde-files mount after apply.
+# run_onchange_ means this only runs when this script's rendered content changes.
+set -e
+
+{{ if eq .chezmoi.os "linux" -}}
+{{- $model := output "sh" "-c" "cat /sys/class/dmi/id/product_name 2>/dev/null || echo unknown" | trim -}}
+{{- if eq $model "Surface Go 2" -}}
+if command -v systemctl >/dev/null && command -v rclone >/dev/null; then
+  systemctl --user daemon-reload
+  systemctl --user enable rclone-tilde-files.service
+
+  # Don't fail the whole apply if the mount can't come up — a missing SD card or
+  # a network blip should not leave chezmoi wedged.
+  if systemctl --user restart rclone-tilde-files.service; then
+    echo "rclone-tilde-files: mounted at ~/files (cache on /card/rclone-cache)"
+  else
+    echo "rclone-tilde-files: enabled but failed to start — check:" >&2
+    echo "  systemctl --user status rclone-tilde-files" >&2
+    echo "  (is /card mounted? is the network up?)" >&2
+  fi
+fi
+{{- end }}
+{{ end -}}

@@ -1,0 +1,36 @@
+[Unit]
+Description=Mount tilde's files over WebDAV at ~/files
+Documentation=https://rclone.org/commands/rclone_mount/
+After=network-online.target
+Wants=network-online.target
+# The VFS cache belongs on the SD card, to keep churn off the internal flash.
+# Without /card mounted rclone would silently cache to ~/.cache instead, so make
+# the mount a hard requirement rather than a preference. /card is nofail in
+# fstab, so a missing card degrades to "no ~/files", not a failed boot.
+RequiresMountsFor=/card
+
+[Service]
+Type=notify
+ExecStartPre=/usr/bin/mkdir -p %h/files /card/rclone-cache
+# A mount, not a sync, and deliberately so: tilde cannot set modification times
+# and exposes no checksums, so rclone can only compare file sizes. Any sync
+# would silently skip a same-size edit. A mount never compares — reads and
+# writes go straight to the server — so it cannot lose data that way.
+ExecStart=/usr/bin/rclone mount tilde-files: %h/files \
+    --config %h/.config/rclone/rclone.conf \
+    --vfs-cache-mode full \
+    --cache-dir /card/rclone-cache \
+    --vfs-cache-max-size 20G \
+    --vfs-cache-max-age 720h \
+    --dir-cache-time 5m \
+    --umask 077 \
+    --log-level INFO
+# rclone unmounts itself on SIGTERM; this is only a backstop for a crash that
+# leaves the mountpoint wedged. '-' so a already-clean stop isn't an error, and
+# fusermount3 because the box has fuse3.
+ExecStop=-/usr/bin/fusermount3 -uz %h/files
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
