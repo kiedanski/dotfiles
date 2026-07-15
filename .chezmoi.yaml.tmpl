@@ -12,6 +12,13 @@ git:
   autoCommit: true
   autoPush: true
 
+# `op signin` cannot create a classic session here (the CLI works only via the
+# desktop-app integration), so a prompting apply blocks forever waiting for a
+# sign-in that never comes. This lives in the generated config too — without it
+# here, `chezmoi init` regenerates chezmoi.yaml without it and apply breaks.
+onepassword:
+  prompt: false
+
 data:
   name: {{ $name | quote }}
   email: {{ $email | quote }}
