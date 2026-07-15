@@ -96,9 +96,8 @@ label = %percentage%%
 [module/date]
 type = internal/date
 interval = 5
-; Weekday dropped: with a long SSID the right group overflowed 1920px and
-; polybar clipped the clock off the edge.
-date = %b %d
+; Weekday is back: dropping the xwindow title freed plenty of width.
+date = %a %b %d
 time = %H:%M
 label = 📅 %date% %time%
 
@@ -140,9 +139,9 @@ interface-type = wireless
 interval = 5
 format-connected = <label-connected>
 format-disconnected = <label-disconnected>
-; Truncated: long SSIDs (e.g. "fairfairphonephone") push the right group past
-; the screen edge and polybar clips whatever falls off.
-label-connected = 📶 %essid:0:12:…%
+; Room for the full SSID now that the xwindow title module is gone; only
+; absurdly long names get cut.
+label-connected = 📶 %essid:0:24:…%
 label-disconnected = 📶 offline
 label-disconnected-foreground = ${colors.background-alt}
 
