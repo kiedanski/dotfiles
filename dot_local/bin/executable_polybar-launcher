@@ -3,6 +3,17 @@
 #
 # With a Type Cover attached you have `super + d`, so the hamburger is just
 # clutter. With no keyboard it's the only way to reach the app launcher.
-# Printing nothing makes polybar collapse the module to zero width.
+#
+# Print an EMPTY LINE rather than nothing when a keyboard is attached. polybar's
+# custom/script only updates the module when the script writes a line — write
+# nothing and it keeps whatever it displayed last. `tablet-mode && echo "☰"`
+# printed nothing in exactly the case we need polybar to act on, so a bar that
+# started in tablet mode kept a stale ☰ forever once the Type Cover was
+# attached; only a polybar restart cleared it. An empty line collapses the
+# module to zero width, which is the effect we actually wanted.
 
-tablet-mode && echo "☰"
+if tablet-mode; then
+    echo "☰"
+else
+    echo
+fi
