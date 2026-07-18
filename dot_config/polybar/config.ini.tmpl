@@ -42,7 +42,9 @@ font-3 = "Noto Color Emoji:style=Regular:scale=10;3"
 modules-left = {{ if $tablet }}launcher {{ end }}bspwm{{ if not $tablet }} xwindow{{ end }}
 modules-center = 
 {{- /* The tablet gets a tappable on-screen-keyboard button; other machines don't need one. */}}
-modules-right = {{ if $tablet }}osk {{ end }}filesystem memory cpu pulseaudio wlan battery powerdraw date
+; cpu / memory / filesystem / powerdraw moved to the conky dashboard on desktop 10.
+; Their [module/...] blocks are left defined below so re-adding is a one-word edit.
+modules-right = {{ if $tablet }}osk {{ end }}pulseaudio wlan battery date
 
 
 cursor-click = pointer

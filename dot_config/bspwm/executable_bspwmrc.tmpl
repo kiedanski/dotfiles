@@ -109,3 +109,15 @@ bspc rule -a mplayer2 state=floating
 bspc rule -a Kupfer.py focus=on
 bspc rule -a Screenkey manage=off
 bspc rule -a ZSTray state=tiled
+
+# --- Metrics dashboard (conky) on desktop 10 / super+0 -----------------------
+# Pin conky to desktop 10 as a borderless, unfocused, floating window (conky
+# centres itself via alignment=top_middle, so no rectangle is needed here).
+bspc rule -a Conky desktop='^10' state=floating layer=below border=off focus=off
+
+# Launch the dashboard, plus the helper that SIGSTOPs it whenever desktop 10
+# isn't focused (zero CPU/battery while you work elsewhere). The rules above must
+# be set first, which is why this lives at the end of the file.
+pgrep -f update-metrics > /dev/null || "$HOME/.config/conky/update-metrics.sh" &
+pgrep -x conky > /dev/null || conky -c "$HOME/.config/conky/dashboard.conf" -d
+pgrep -f toggle-conky > /dev/null || "$HOME/.config/conky/toggle-conky.sh" &

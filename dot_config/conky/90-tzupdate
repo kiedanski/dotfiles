@@ -1,0 +1,10 @@
+#!/bin/sh
+# NetworkManager dispatcher: refresh the system timezone from geolocation
+# whenever a connection comes up, so the clock follows you when you travel.
+# Requires tzupdate (AUR). Install to /etc/NetworkManager/dispatcher.d/ as
+# root:root, mode 0755.
+case "$2" in
+    up|dhcp4-change|connectivity-change)
+        /usr/bin/tzupdate >/dev/null 2>&1 || true
+        ;;
+esac
