@@ -46,7 +46,13 @@ pgrep -x blueman-applet > /dev/null || blueman-applet &
 pgrep -x 1password > /dev/null || 1password --silent &
 
 # Keyboard tweaks
+# Caps Lock -> Hyper. `caps:hyper` only swaps the *keysym* to Hyper_L and drops the
+# Lock behaviour; it never adds the key to a modifier group, so sxhkd's `hyper + ...`
+# bindings (which need Mod3) never fired. The xmodmap line attaches keycode 66 to
+# Mod3 so Caps actually *acts* as the modifier. It must run after setxkbmap, which
+# rebuilds the keymap (and would otherwise wipe the modifier add).
 setxkbmap -option caps:hyper
+xmodmap -e "add mod3 = Hyper_L"
 {{ if $tablet }}
 # --- Touch support ({{ $model }}) ---
 # bspwm is keyboard-driven, which is useless with the keyboard detached.
