@@ -1,0 +1,159 @@
+#!/usr/bin/python
+"""tag-album — force-tag a folder of audio from MusicBrainz by album name.
+
+Made for yt-dlp/YouTube downloads whose audio (Lyric-Video/Visualizer edits) the
+beets autotagger REJECTS: it matches files -> tracks by SONG NAME and ignores
+audio length, so the source doesn't matter. Writes clean title/artist/album/
+track tags and embeds real cover art (Cover Art Archive).
+
+Usage:
+    tag-album [--artist NAME] [--release MBID] [--write] <folder> <album name...>
+
+Dry-run by default (prints the file -> track mapping); pass --write to apply.
+Runs under system python (/usr/bin/python) for beets' mediafile library.
+"""
+import sys, os, re, json, argparse, urllib.request, urllib.parse, datetime
+from collections import Counter
+from mediafile import MediaFile, Image, ImageType
+
+UA = "tag-album/1.0 ( https://github.com/kiedanski/dotfiles )"
+MB = "https://musicbrainz.org/ws/2"
+CAA = "https://coverartarchive.org"
+AUDIO = (".mp3", ".m4a", ".opus", ".flac", ".ogg")
+VIDEO_SUFFIX = re.compile(
+    r"\s*\((?:Official Music Video|Official Video|Lyric Video|Lyrics|Visualizer|Audio|Video)\)\s*$", re.I)
+
+
+def mbget(path, params):
+    req = urllib.request.Request(f"{MB}/{path}?{urllib.parse.urlencode(params)}",
+                                 headers={"User-Agent": UA})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return json.load(r)
+
+
+def norm(s):
+    return re.sub(r"[^a-z0-9]", "", (s or "").lower())
+
+
+def song_of(mf, fname, artist):
+    t = mf.title or fname.rsplit(".", 1)[0].replace("_", " ")
+    if artist:
+        t = re.sub(r"^\s*" + re.escape(artist) + r"\s*-\s*", "", t, flags=re.I)
+    return VIDEO_SUFFIX.sub("", t).strip()
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("folder")
+    ap.add_argument("album", nargs="+")
+    ap.add_argument("--artist")
+    ap.add_argument("--release", help="force a MusicBrainz release MBID")
+    ap.add_argument("--write", action="store_true")
+    a = ap.parse_args()
+    album = " ".join(a.album)
+
+    files = sorted(f for f in os.listdir(a.folder) if f.lower().endswith(AUDIO))
+    if not files:
+        sys.exit(f"no audio files in {a.folder}")
+
+    # album artist: from --artist, else the most common artist tag (feat. stripped)
+    artist = a.artist
+    if not artist:
+        c = Counter()
+        for f in files:
+            mf = MediaFile(os.path.join(a.folder, f))
+            ar = mf.albumartist or mf.artist
+            if ar:
+                c[re.sub(r"\s+feat\.?.*$", "", ar, flags=re.I).strip()] += 1
+        artist = c.most_common(1)[0][0] if c else ""
+    print(f"artist: {artist or '(unknown)'}  |  album: {album}  |  {len(files)} files")
+
+    # pick a MusicBrainz release (prefer one whose track count matches)
+    rel_id = a.release
+    if not rel_id:
+        query = f'release:"{album}"' + (f' AND artist:"{artist}"' if artist else "")
+        rels = mbget("release/", {"query": query, "fmt": "json", "limit": 25}).get("releases", [])
+        cand = [r for r in rels if r.get("track-count") == len(files)] or rels
+        if not cand:
+            sys.exit("no MusicBrainz release found for that album/artist")
+        rel_id = cand[0]["id"]
+
+    rel = mbget(f"release/{rel_id}", {"inc": "recordings+artist-credits", "fmt": "json"})
+    date = rel.get("date", "") or ""
+    tracks = {}
+    for m in rel.get("media", []):
+        for t in m.get("tracks", []):
+            ac = "".join(x.get("name", "") + x.get("joinphrase", "")
+                         for x in t["recording"].get("artist-credit", []))
+            tracks[int(t["position"])] = (t["title"], ac)
+    total = len(tracks)
+    by_norm = {norm(v[0]): p for p, v in tracks.items()}
+    print(f"release: {rel.get('title')} ({date or '?'})  [{rel_id}]  {total} tracks\n")
+
+    def match(song):
+        n = norm(song)
+        if n in by_norm:
+            return by_norm[n]
+        best = None
+        for pn, pp in by_norm.items():
+            if n and (n.startswith(pn) or pn.startswith(n)):
+                if best is None or len(pn) > len(norm(tracks[best][0])):
+                    best = pp
+        return best
+
+    art = None
+    if a.write:
+        try:
+            req = urllib.request.Request(f"{CAA}/release/{rel_id}/front-500",
+                                         headers={"User-Agent": UA})
+            art = urllib.request.urlopen(req, timeout=30).read()
+        except Exception as e:
+            print("cover art unavailable:", e)
+
+    d = None
+    if date[:4].isdigit():
+        parts = (date.split("-") + ["1", "1"])[:3]
+        try:
+            d = datetime.date(int(parts[0]), int(parts[1]), int(parts[2]))
+        except Exception:
+            d = datetime.date(int(parts[0]), 1, 1)
+
+    plan = []
+    for f in files:
+        mf = MediaFile(os.path.join(a.folder, f))
+        song = song_of(mf, f, artist)
+        pos = match(song)
+        plan.append((pos, f, song))
+        if a.write and pos:
+            title, ac = tracks[pos]
+            mf.title = title
+            mf.artist = ac if (ac and norm(ac) != norm(artist)) else artist
+            mf.albumartist = artist
+            mf.album = rel.get("title")
+            if d:
+                mf.date = d
+                mf.original_date = d
+            mf.track = pos
+            mf.tracktotal = total
+            mf.disc = 1
+            mf.disctotal = 1
+            mf.mb_albumid = rel_id
+            if art:
+                mf.images = [Image(data=art, type=ImageType.front, desc="Front")]
+            mf.save()
+
+    matched = sum(1 for p, _, _ in plan if p)
+    print(f"{'WROTE' if a.write else 'DRY-RUN'} — {matched}/{len(files)} matched:")
+    for pos, f, song in sorted(plan, key=lambda r: (r[0] or 99)):
+        print(f"  {str(pos or '?'):>2}  {tracks.get(pos, ('??',))[0]:<34} <- [{song}]")
+    unmatched = [f for p, f, _ in plan if not p]
+    if unmatched:
+        print("\nUNMATCHED (left unchanged):")
+        for f in unmatched:
+            print("   ", f)
+    if not a.write:
+        print("\n(dry-run: nothing changed — re-run with --write to apply)")
+
+
+if __name__ == "__main__":
+    main()
