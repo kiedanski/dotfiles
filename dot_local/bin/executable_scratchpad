@@ -1,0 +1,25 @@
+#!/bin/sh
+# scratchpad — toggle a floating, sticky "dropdown" terminal (WM_CLASS scratchpad).
+#
+# Placement/float/stick is handled by the existing bspwm rule:
+#   bspc rule -a scratchpad state=floating sticky=on rectangle=900x500+510+270
+# We just show/hide the SAME instance (via bspwm's hidden flag) so whatever you
+# were running in it survives. `sticky` makes it follow you to any desktop.
+set -eu
+
+class=scratchpad
+
+wid=$(xdotool search --limit 1 --class "^${class}$" 2>/dev/null | head -1 || true)
+
+if [ -z "$wid" ]; then
+	# Not spawned yet this session — launch it; the rule floats/sticks/centres it.
+	setsid -f kitty --class="$class" >/dev/null 2>&1
+	exit 0
+fi
+
+hid=$(printf '0x%08x' "$wid")
+if bspc query -N -n "${hid}.hidden" >/dev/null 2>&1; then
+	bspc node "$hid" -g hidden=off -f    # hidden -> reveal on current desktop + focus
+else
+	bspc node "$hid" -g hidden=on         # visible -> hide
+fi

@@ -3,8 +3,14 @@
 #
 
 # terminal emulator — prefer ghostty, fall back to kitty where it isn't installed
+# (opens in the CURRENT desktop; use hyper+t for the pinned desktop-1 terminal)
 super + Return
 	sh -c 'command -v ghostty >/dev/null && exec ghostty || exec kitty'
+
+# scratchpad: floating, sticky dropdown terminal — toggle show/hide, keeps its
+# shell state. Uses the `bspc rule -a scratchpad ...` in bspwmrc.
+super + shift + Return
+	scratchpad
 
 # NOTE: the scratchpad / scratchpad-notes bindings were removed — they pointed at
 # ~/.config/bspwm/scripts/{scratchpad,scratchpad-notes}, which this repo never shipped,
@@ -38,6 +44,10 @@ hyper + n
 # music (rmpc) -> desktop 5
 hyper + m
 	run-or-raise 5 music -- kitty --class=music -e rmpc
+
+# home terminal (ghostty) -> desktop 1
+hyper + t
+	run-or-raise 1 com.ghostty.term1 -- ghostty --class=com.ghostty.term1
 
 # config switcher (capslock + c)
 hyper + c

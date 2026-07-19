@@ -118,6 +118,7 @@ bspc rule -a Gimp desktop='^8' state=floating follow=on
 # Key-launched apps (sxhkd hyper+{b,e,n,m}), each pinned to a fixed desktop so
 # they always open in the same place. `comms` and `music` are kitty windows
 # started with --class=<name>; qutebrowser/obsidian match their native WM_CLASS.
+bspc rule -a com.ghostty.term1 desktop='^1'   # hyper+t  home terminal
 bspc rule -a qutebrowser desktop='^2'   # hyper+b  browser
 bspc rule -a comms       desktop='^3'   # hyper+e  email + chat (tmux)
 bspc rule -a obsidian    desktop='^4'   # hyper+n  notes
