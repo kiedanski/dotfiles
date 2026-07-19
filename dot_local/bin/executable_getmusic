@@ -1,40 +1,48 @@
 #!/usr/bin/env bash
-# getmusic [--no-tag] [--album "NAME"] URL [URL...]
+# getmusic [--no-tag] [--album "NAME"] [--playlist "NAME"] [--no-playlist] URL [URL...]
 #
-# Download audio into /card/music as MP3, then automatically tag it from
-# MusicBrainz (whole-album match, with per-song fallback) and refresh MPD.
-# Always MP3 (`--audio-quality 0`
-# = highest VBR) with shell-friendly names (`--restrict-filenames`), embedding
-# cover art + metadata. Works with YouTube, Bandcamp, SoundCloud, playlists, etc.
-# A download-archive skips anything already grabbed.
+# Download audio into /card/music as MP3, tag it from MusicBrainz (whole-album
+# match, with per-song fallback), save an MPD playlist of what was downloaded,
+# and refresh MPD. Always MP3 (`--audio-quality 0` = highest VBR) with
+# shell-friendly names (`--restrict-filenames`), embedding cover art + metadata.
+# Works with YouTube, Bandcamp, SoundCloud, playlists, etc. A download-archive
+# skips anything already grabbed.
 #
-#   --album "NAME"  tag against this exact album (most reliable) instead of
-#                   letting tag-album auto-detect it.
-#   --no-tag        just download; skip the MusicBrainz tagging step.
+#   --album "NAME"     tag against this exact album (most reliable).
+#   --no-tag           just download; skip MusicBrainz tagging.
+#   --playlist "NAME"  save one MPD playlist NAME with everything downloaded
+#                      (default: one playlist per album, named after the album).
+#   --no-playlist      don't create any playlist.
 set -euo pipefail
 
 dest="/card/music"
+plist_dir="$HOME/.config/mpd/playlists"
 no_tag=0
+no_playlist=0
 album=""
+playlist=""
 urls=()
 while [ "$#" -gt 0 ]; do
 	case "$1" in
-		--no-tag)   no_tag=1; shift ;;
-		--album)    album="${2:-}"; shift 2 ;;
-		--album=*)  album="${1#--album=}"; shift ;;
-		--)         shift; while [ "$#" -gt 0 ]; do urls+=("$1"); shift; done ;;
-		*)          urls+=("$1"); shift ;;
+		--no-tag)      no_tag=1; shift ;;
+		--no-playlist) no_playlist=1; shift ;;
+		--album)       album="${2:-}"; shift 2 ;;
+		--album=*)     album="${1#--album=}"; shift ;;
+		--playlist)    playlist="${2:-}"; shift 2 ;;
+		--playlist=*)  playlist="${1#--playlist=}"; shift ;;
+		--)            shift; while [ "$#" -gt 0 ]; do urls+=("$1"); shift; done ;;
+		*)             urls+=("$1"); shift ;;
 	esac
 done
 
 if [ "${#urls[@]}" -eq 0 ]; then
-	echo "usage: getmusic [--no-tag] [--album \"NAME\"] <url> [url...]" >&2
+	echo "usage: getmusic [--no-tag] [--album \"NAME\"] [--playlist \"NAME\"] [--no-playlist] <url> [url...]" >&2
 	exit 1
 fi
 
 mkdir -p "$dest"
 
-# Snapshot the library so we can tell which folders received new tracks.
+# Snapshot the library so we can tell what's new (before download).
 before=$(mktemp)
 find "$dest" -type f -name '*.mp3' 2>/dev/null | sort > "$before"
 
@@ -46,16 +54,15 @@ yt-dlp \
 	--output "$dest/%(artist,uploader)s/%(title)s.%(ext)s" \
 	"${urls[@]}"
 
-# Folders that got new files this run.
+# Folders that received new files (download locations, before tagging moves them).
 after=$(mktemp)
 find "$dest" -type f -name '*.mp3' 2>/dev/null | sort > "$after"
 mapfile -t newdirs < <(comm -13 "$before" "$after" | xargs -r -d '\n' -n1 dirname | sort -u)
-rm -f "$before" "$after"
+rm -f "$after"
 
-# Auto-tag each new folder from MusicBrainz. Hybrid: try whole-album matching
-# first (accurate, consistent track numbers), and only if the folder isn't one
-# identifiable album (singles, mixed playlists, partial downloads) fall back to
-# per-song lookup so everything still gets tagged.
+# Auto-tag each new folder from MusicBrainz. Hybrid: whole-album match first
+# (accurate, consistent track numbers), per-song fallback for singles / mixed
+# playlists / partial downloads so everything still gets tagged.
 if [ "$no_tag" -eq 0 ] && [ "${#newdirs[@]}" -gt 0 ] && command -v tag-album >/dev/null 2>&1; then
 	for d in "${newdirs[@]}"; do
 		echo "── tagging: $d"
@@ -71,4 +78,31 @@ if [ "$no_tag" -eq 0 ] && [ "${#newdirs[@]}" -gt 0 ] && command -v tag-album >/d
 fi
 
 command -v mpc >/dev/null 2>&1 && mpc update >/dev/null 2>&1 || true
+
+# Save an MPD playlist of what was downloaded (at final, post-tagging locations).
+if [ "$no_playlist" -eq 0 ]; then
+	mkdir -p "$plist_dir"
+	final=$(mktemp)
+	find "$dest" -type f -name '*.mp3' 2>/dev/null | sort > "$final"
+	mapfile -t newfiles < <(comm -13 "$before" "$final")
+	rm -f "$final"
+	if [ "${#newfiles[@]}" -gt 0 ]; then
+		if [ -n "$playlist" ]; then
+			# one named playlist containing everything downloaded this run
+			name=$(printf '%s' "$playlist" | tr ' ' '_' | tr -cd 'A-Za-z0-9._-')
+			[ -n "$name" ] || name="playlist"
+			printf '%s\n' "${newfiles[@]}" | sed "s#^${dest}/##" | sort > "$plist_dir/$name.m3u"
+			echo "♪ playlist: $name ($(wc -l < "$plist_dir/$name.m3u") tracks)"
+		else
+			# one playlist per album folder that got new tracks (= its full contents)
+			printf '%s\n' "${newfiles[@]}" | xargs -r -d '\n' -n1 dirname | sort -u | while IFS= read -r d; do
+				name=$(basename "$d")
+				find "$d" -maxdepth 1 -type f -name '*.mp3' | sed "s#^${dest}/##" | sort > "$plist_dir/$name.m3u"
+				echo "♪ playlist: $name ($(wc -l < "$plist_dir/$name.m3u") tracks)"
+			done
+		fi
+	fi
+fi
+
+rm -f "$before"
 echo "Done → $dest"
