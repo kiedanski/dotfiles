@@ -46,13 +46,14 @@ pgrep -x blueman-applet > /dev/null || blueman-applet &
 pgrep -x 1password > /dev/null || 1password --silent &
 
 # Keyboard tweaks
-# Caps Lock -> Hyper. `caps:hyper` only swaps the *keysym* to Hyper_L and drops the
-# Lock behaviour; it never adds the key to a modifier group, so sxhkd's `hyper + ...`
-# bindings (which need Mod3) never fired. The xmodmap line attaches keycode 66 to
-# Mod3 so Caps actually *acts* as the modifier. It must run after setxkbmap, which
-# rebuilds the keymap (and would otherwise wipe the modifier add).
-setxkbmap -option caps:hyper
-xmodmap -e "add mod3 = Hyper_L"
+# Caps Lock -> Hyper (for sxhkd's `hyper + ...` bindings). `caps:hyper` only swaps
+# the keysym; it never adds Caps to a modifier group, so a second step attaches
+# keycode 66 to Mod3 — both live in the `hypercaps` helper. `hypercaps-watch`
+# re-applies them after every keyboard hotplug: docking the Type Cover makes X
+# reapply the system keymap and drop the Mod3 add. Make the keysym half durable at
+# the system level with:  sudo localectl set-x11-keymap us pc105 altgr-intl caps:hyper
+hypercaps
+pgrep -f hypercaps-watch > /dev/null || hypercaps-watch &
 {{ if $tablet }}
 # --- Touch support ({{ $model }}) ---
 # bspwm is keyboard-driven, which is useless with the keyboard detached.
@@ -110,7 +111,13 @@ bspc config pointer_action3 resize_corner
 bspc rule -a scratchpad state=floating sticky=on rectangle=900x500+510+270
 bspc rule -a scratchpad-notes state=floating sticky=on rectangle=900x500+510+270
 bspc rule -a Gimp desktop='^8' state=floating follow=on
-bspc rule -a Firefox desktop='^2'
+# Key-launched apps (sxhkd hyper+{b,e,n,m}), each pinned to a fixed desktop so
+# they always open in the same place. `comms` and `music` are kitty windows
+# started with --class=<name>; qutebrowser/obsidian match their native WM_CLASS.
+bspc rule -a qutebrowser desktop='^2'   # hyper+b  browser
+bspc rule -a comms       desktop='^3'   # hyper+e  email + chat (tmux)
+bspc rule -a obsidian    desktop='^4'   # hyper+n  notes
+bspc rule -a music       desktop='^5'   # hyper+m  rmpc
 bspc rule -a mplayer2 state=floating
 bspc rule -a Kupfer.py focus=on
 bspc rule -a Screenkey manage=off

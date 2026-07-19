@@ -1,0 +1,20 @@
+#!/bin/sh
+# hypercaps-watch — keep Caps->Hyper alive across keyboard hotplug.
+#
+# Docking/undocking the Surface Type Cover hotplugs a USB keyboard; the X server
+# then reapplies /etc/X11/xorg.conf.d/00-keyboard.conf and drops the Mod3
+# membership that sxhkd's `hyper + ...` bindings need. We watch udev for input
+# 'add' events and re-run `hypercaps` a moment later — twice, to win the race
+# against X finishing device setup. Launched from bspwmrc so it inherits the X
+# session's DISPLAY/XAUTHORITY. udev monitoring needs no root.
+set -eu
+
+hypercaps   # correct the mapping at session start
+
+udevadm monitor --udev --subsystem-match=input 2>/dev/null | while IFS= read -r line; do
+	case "$line" in
+		*" add "*)
+			( sleep 0.6; hypercaps; sleep 1.2; hypercaps ) >/dev/null 2>&1 &
+			;;
+	esac
+done

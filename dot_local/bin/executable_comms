@@ -1,0 +1,17 @@
+#!/bin/sh
+# comms — one tmux session holding email (neomutt) and chat (nchat).
+#
+# Launched inside a dedicated terminal via:  kitty --class=comms -e comms
+# The tmux session is detached-persistent: closing the terminal leaves neomutt
+# and nchat running, and reopening (hyper+e) reattaches instead of restarting.
+set -eu
+
+session=comms
+
+if ! tmux has-session -t "$session" 2>/dev/null; then
+	tmux new-session -d -s "$session" -n mail neomutt
+	tmux new-window  -t "$session"   -n chat nchat
+	tmux select-window -t "${session}:mail"
+fi
+
+exec tmux attach -t "$session"

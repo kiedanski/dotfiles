@@ -1,0 +1,31 @@
+#!/bin/sh
+# run-or-raise DESKTOP CLASS [--] COMMAND...
+#
+# Jump to DESKTOP, focus an existing window whose WM_CLASS (class or instance)
+# matches CLASS, otherwise launch COMMAND. The matching bspc rule in bspwmrc
+# pins the window to DESKTOP, so a fresh launch lands in the right place.
+#
+# Used by the sxhkd hyper+{b,e,n,m} app-launcher bindings.
+set -eu
+
+desktop="$1"
+class="$2"
+shift 2
+[ "${1:-}" = "--" ] && shift
+
+# Go to the app's home desktop first.
+bspc desktop -f "^${desktop}" 2>/dev/null || true
+
+# Find an existing window of this class. --classname matches the WM_CLASS
+# instance (res_name); --class matches the class (res_class). Try both so we
+# cover terminals launched with --class as well as native apps.
+wid=$(xdotool search --limit 1 --classname "^${class}$" 2>/dev/null | head -n1 || true)
+[ -z "$wid" ] && wid=$(xdotool search --limit 1 --class "^${class}$" 2>/dev/null | head -n1 || true)
+
+if [ -n "$wid" ]; then
+	# Already running — raise and focus it.
+	xdotool windowactivate "$wid" 2>/dev/null || true
+else
+	# Not running — launch it, detached from sxhkd.
+	setsid -f "$@" >/dev/null 2>&1
+fi

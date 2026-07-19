@@ -1,0 +1,15 @@
+#!/bin/sh
+# hypercaps — make Caps Lock act as Hyper on Mod3, so sxhkd's `hyper + ...`
+# bindings fire. Two steps are required and NEITHER alone is enough:
+#   1) caps:hyper           Caps emits the Hyper_L *keysym* (and stops locking)
+#   2) add mod3 = Hyper_L   puts the Caps keycode into the Mod3 modifier group,
+#                           which is the bit sxhkd actually reads. caps:hyper by
+#                           itself only touches the keysym, never the modmap.
+#
+# Make step 1 durable at the system level (survives reboot + hotplug) with:
+#     sudo localectl set-x11-keymap us pc105 altgr-intl caps:hyper
+# This script re-asserts both so it works immediately and right after a Type
+# Cover hotplug (which reapplies the system keymap and drops the Mod3 add).
+# Idempotent — safe to run repeatedly.
+setxkbmap -option caps:hyper
+xmodmap -e "clear mod3" -e "add mod3 = Hyper_L"

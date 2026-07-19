@@ -18,6 +18,27 @@ super + d
 super + backslash
 	1password --quick-access
 
+# --- application launchers -------------------------------------------------
+# Hyper (Caps Lock) layer. run-or-raise jumps to the app's fixed desktop and
+# focuses it if already open, otherwise launches it. The desktops are pinned by
+# matching `bspc rule` lines in bspwmrc.
+
+# browser -> desktop 2
+hyper + b
+	run-or-raise 2 qutebrowser -- qutebrowser
+
+# comms: email (neomutt) + chat (nchat) in tmux -> desktop 3
+hyper + e
+	run-or-raise 3 comms -- kitty --class=comms -e comms
+
+# notes (obsidian) -> desktop 4
+hyper + n
+	run-or-raise 4 obsidian -- obsidian
+
+# music (rmpc) -> desktop 5
+hyper + m
+	run-or-raise 5 music -- kitty --class=music -e rmpc
+
 # config switcher (capslock + c)
 hyper + c
 	select_configuration
@@ -47,6 +68,19 @@ XF86AudioMute
 
 XF86AudioMicMute
 	pactl set-source-mute @DEFAULT_SOURCE@ toggle
+
+# MPD transport — mpc talks to the mpd user service (works even with rmpc closed)
+XF86AudioPlay
+	mpc toggle
+
+XF86AudioNext
+	mpc next
+
+XF86AudioPrev
+	mpc prev
+
+XF86AudioStop
+	mpc stop
 
 # brightness control (if laptop)
 XF86MonBrightnessUp
