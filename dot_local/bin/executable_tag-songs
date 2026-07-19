@@ -1,0 +1,226 @@
+#!/usr/bin/python
+"""tag-songs — tag each audio file individually from MusicBrainz (per-song).
+
+Unlike tag-album, this does NOT assume the folder is one album. It looks each
+track up on its own (artist + title), attributes it to its best release
+(preferring a plain official ALBUM over deluxe / "version" / single / compilation
+editions), writes clean title/artist/album/track tags + cover art, and files it
+under <library>/<Artist>/<Album>/NN_-_Title.ext (album-less tracks go straight
+under <library>/<Artist>/).
+
+Usage:
+    tag-songs [--write] [--artist NAME] [--library DIR] [--no-organize] <folder>
+
+Dry-run by default; pass --write to apply. Runs under /usr/bin/python for beets'
+mediafile library.
+"""
+import sys, os, re, json, time, argparse, urllib.request, urllib.parse, datetime
+from mediafile import MediaFile, Image, ImageType
+
+UA = "tag-songs/1.0 ( https://github.com/kiedanski/dotfiles )"
+MB = "https://musicbrainz.org/ws/2"
+CAA = "https://coverartarchive.org"
+AUDIO = (".mp3", ".m4a", ".opus", ".flac", ".ogg")
+VIDEO_SUFFIX = re.compile(
+    r"\s*\((?:Official Music Video|Official Video|Lyric Video|Lyrics|Visualizer|Audio|Video)\)\s*$", re.I)
+EDITION = re.compile(
+    r"\b(deluxe|version|edition|track by track|live|tour|anniversary|remix|acoustic|"
+    r"instrumental|karaoke|expanded|extended|demo|sped up|slowed)\b", re.I)
+
+try:
+    from unidecode import unidecode
+except Exception:
+    def unidecode(s):
+        return s
+
+_rel_cache = {}
+_art_cache = {}
+
+
+def mbget(path, params):
+    req = urllib.request.Request(f"{MB}/{path}?{urllib.parse.urlencode(params)}",
+                                 headers={"User-Agent": UA})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return json.load(r)
+
+
+def norm(s):
+    return re.sub(r"[^a-z0-9]", "", (s or "").lower())
+
+
+def sanitize(s):
+    s = unidecode(s or "")
+    s = re.sub(r"[\\/]+", "_", s)
+    s = re.sub(r"\s+", "_", s)
+    s = re.sub(r"[^A-Za-z0-9._-]", "", s)
+    return re.sub(r"_+", "_", s).strip("_.") or "Unknown"
+
+
+def credit(ac):
+    return "".join(x.get("name", "") + x.get("joinphrase", "") for x in (ac or []))
+
+
+def song_of(mf, fname, artist):
+    t = mf.title or fname.rsplit(".", 1)[0].replace("_", " ")
+    if artist:
+        t = re.sub(r"^\s*" + re.escape(artist) + r"\s*-\s*", "", t, flags=re.I)
+    return VIDEO_SUFFIX.sub("", t).strip()
+
+
+def score_release(rel):
+    s = 0.0
+    if rel.get("status") == "Official":
+        s += 100
+    rg = rel.get("release-group", {}) or {}
+    pt = rg.get("primary-type")
+    if rg.get("secondary-types"):
+        s -= 300                       # avoid compilation / live / remix albums
+    s += {"Album": 60, "EP": 40, "Single": 15}.get(pt, 0)
+    rt, gt = rel.get("title", ""), rg.get("title", rel.get("title", ""))
+    if norm(rt) == norm(gt):
+        s += 40                        # plain edition (not a special version)
+    if EDITION.search(rt):
+        s -= 60
+    tc = ((rel.get("media") or [{}])[0]).get("track-count") or 99
+    s -= 0.05 * tc                     # prefer standard over expanded editions
+    return s
+
+
+def get_release(rid):
+    if rid not in _rel_cache:
+        _rel_cache[rid] = mbget(f"release/{rid}",
+                                {"inc": "recordings+artist-credits+release-groups", "fmt": "json"})
+        time.sleep(1.0)
+    return _rel_cache[rid]
+
+
+def get_art(rid):
+    if rid not in _art_cache:
+        try:
+            req = urllib.request.Request(f"{CAA}/release/{rid}/front-500", headers={"User-Agent": UA})
+            _art_cache[rid] = urllib.request.urlopen(req, timeout=30).read()
+        except Exception:
+            _art_cache[rid] = None
+    return _art_cache[rid]
+
+
+def identify(artist, song):
+    """Return dict(title, artist, album, albumartist, track, total, date, rel_id) or None."""
+    q = (f'artist:"{artist}" AND ' if artist else "") + f'recording:"{song}"'
+    try:
+        recs = mbget("recording/", {"query": q, "fmt": "json", "limit": 8}).get("recordings", [])
+    except Exception:
+        return None
+    time.sleep(1.0)
+    rec = next((r for r in recs if norm(r.get("title")) == norm(song)), recs[0] if recs else None)
+    if not rec:
+        return None
+    rels = rec.get("releases", [])
+    if not rels:
+        return {"title": rec["title"], "artist": credit(rec.get("artist-credit")),
+                "album": None, "albumartist": None, "track": None, "total": None,
+                "date": None, "rel_id": None}
+    best = max(rels, key=score_release)
+    full = get_release(best["id"])
+    rg = full.get("release-group", {}) or {}
+    album = rg.get("title") or full.get("title")
+    date = full.get("date") or rg.get("first-release-date") or ""
+    albumartist = re.sub(r"\s+feat\.?.*$", "", credit(full.get("artist-credit")), flags=re.I).strip()
+    track = total = None
+    for m in full.get("media", []):
+        for t in m.get("tracks", []):
+            if t.get("recording", {}).get("id") == rec["id"]:
+                track = int(t.get("position") or t.get("number") or 0) or None
+                total = m.get("track-count")
+    return {"title": rec["title"], "artist": credit(rec.get("artist-credit")),
+            "album": album, "albumartist": albumartist or None,
+            "track": track, "total": total, "date": date, "rel_id": best["id"]}
+
+
+def as_date(s):
+    if not (s and s[:4].isdigit()):
+        return None
+    p = (s.split("-") + ["1", "1"])[:3]
+    try:
+        return datetime.date(int(p[0]), int(p[1]), int(p[2]))
+    except Exception:
+        return datetime.date(int(p[0]), 1, 1)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("folder")
+    ap.add_argument("--artist")
+    ap.add_argument("--library", default="/card/music")
+    ap.add_argument("--no-organize", action="store_true")
+    ap.add_argument("--write", action="store_true")
+    a = ap.parse_args()
+
+    files = sorted(f for f in os.listdir(a.folder) if f.lower().endswith(AUDIO))
+    if not files:
+        sys.exit(f"no audio files in {a.folder}")
+    organize = a.write and not a.no_organize
+    ok = 0
+
+    for f in files:
+        src = os.path.join(a.folder, f)
+        mf = MediaFile(src)
+        artist = a.artist or re.sub(r"\s+feat\.?.*$", "", (mf.albumartist or mf.artist or ""), flags=re.I).strip()
+        song = song_of(mf, f, artist)
+        info = identify(artist, song)
+        if not info:
+            print(f"  ??  no match           <- [{song}]  ({f})")
+            continue
+        ok += 1
+        alb = info["album"] or "(no album)"
+        tno = info["track"]
+        print(f"  {str(tno or '-'):>2}  {info['title']:<30}  ·  {alb}  ({info.get('date') or '?'})")
+
+        if not a.write:
+            continue
+        aa = info["albumartist"] or artist or info["artist"]
+        mf.title = info["title"]
+        mf.artist = info["artist"] or aa
+        mf.albumartist = aa
+        if info["album"]:
+            mf.album = info["album"]
+        if info["track"]:
+            mf.track = info["track"]
+        if info["total"]:
+            mf.tracktotal = info["total"]
+        d = as_date(info.get("date"))
+        if d:
+            mf.date = d
+            mf.original_date = d
+        if info["rel_id"]:
+            mf.mb_albumid = info["rel_id"]
+            art = get_art(info["rel_id"])
+            if art:
+                mf.images = [Image(data=art, type=ImageType.front, desc="Front")]
+        mf.save()
+
+        if organize:
+            ext = f.rsplit(".", 1)[-1].lower()
+            if info["album"] and info["track"]:
+                dstdir = os.path.join(a.library, sanitize(aa), sanitize(info["album"]))
+                name = f"{info['track']:02d}_-_{sanitize(info['title'])}.{ext}"
+            else:
+                dstdir = os.path.join(a.library, sanitize(aa))
+                name = f"{sanitize(info['title'])}.{ext}"
+            os.makedirs(dstdir, exist_ok=True)
+            dst = os.path.join(dstdir, name)
+            if os.path.abspath(dst) != os.path.abspath(src) and not os.path.exists(dst):
+                os.rename(src, dst)
+
+    if organize:
+        try:
+            os.rmdir(a.folder)
+        except OSError:
+            pass
+
+    print(f"\n{'WROTE' if a.write else 'DRY-RUN'} — {ok}/{len(files)} identified"
+          + ("" if a.write else "  (re-run with --write to apply)"))
+
+
+if __name__ == "__main__":
+    main()

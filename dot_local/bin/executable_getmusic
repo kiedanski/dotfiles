@@ -2,7 +2,8 @@
 # getmusic [--no-tag] [--album "NAME"] URL [URL...]
 #
 # Download audio into /card/music as MP3, then automatically tag it from
-# MusicBrainz (via tag-album) and refresh MPD. Always MP3 (`--audio-quality 0`
+# MusicBrainz (whole-album match, with per-song fallback) and refresh MPD.
+# Always MP3 (`--audio-quality 0`
 # = highest VBR) with shell-friendly names (`--restrict-filenames`), embedding
 # cover art + metadata. Works with YouTube, Bandcamp, SoundCloud, playlists, etc.
 # A download-archive skips anything already grabbed.
@@ -51,14 +52,20 @@ find "$dest" -type f -name '*.mp3' 2>/dev/null | sort > "$after"
 mapfile -t newdirs < <(comm -13 "$before" "$after" | xargs -r -d '\n' -n1 dirname | sort -u)
 rm -f "$before" "$after"
 
-# Auto-tag each new folder from MusicBrainz.
+# Auto-tag each new folder from MusicBrainz. Hybrid: try whole-album matching
+# first (accurate, consistent track numbers), and only if the folder isn't one
+# identifiable album (singles, mixed playlists, partial downloads) fall back to
+# per-song lookup so everything still gets tagged.
 if [ "$no_tag" -eq 0 ] && [ "${#newdirs[@]}" -gt 0 ] && command -v tag-album >/dev/null 2>&1; then
 	for d in "${newdirs[@]}"; do
 		echo "── tagging: $d"
 		if [ -n "$album" ]; then
-			tag-album "$d" "$album" --write || echo "   (tagging skipped — see above)"
+			tag-album "$d" "$album" --write || echo "   (album tag failed for $d)"
+		elif tag-album "$d" --auto --write; then
+			:   # matched as a single album — done
 		else
-			tag-album "$d" --auto --write || echo "   (auto-tag skipped — run: tag-album \"$d\" \"<album>\" --write)"
+			echo "   not one album → per-song tagging…"
+			tag-songs "$d" --write || echo "   (per-song tagging had trouble for $d)"
 		fi
 	done
 fi
