@@ -1,5 +1,5 @@
 #!/usr/bin/python
-"""tag-album — force-tag a folder of audio from MusicBrainz by album name.
+"""tag-album — force-tag a folder of audio from MusicBrainz.
 
 Made for yt-dlp/YouTube downloads whose audio (Lyric-Video/Visualizer edits) the
 beets autotagger REJECTS: it matches files -> tracks by SONG NAME and ignores
@@ -7,12 +7,14 @@ audio length, so the source doesn't matter. Writes clean title/artist/album/
 track tags and embeds real cover art (Cover Art Archive).
 
 Usage:
-    tag-album [--artist NAME] [--release MBID] [--write] <folder> <album name...>
+    tag-album [--auto] [--artist NAME] [--release MBID] [--write] <folder> [album name...]
 
-Dry-run by default (prints the file -> track mapping); pass --write to apply.
-Runs under system python (/usr/bin/python) for beets' mediafile library.
+--auto infers the album from the tracks themselves (no album name needed) and is
+what `getmusic` calls automatically. It only writes when it can confidently
+identify a single release with a matching track count. Dry-run by default;
+pass --write to apply. Runs under /usr/bin/python for beets' mediafile library.
 """
-import sys, os, re, json, argparse, urllib.request, urllib.parse, datetime
+import sys, os, re, json, time, argparse, urllib.request, urllib.parse, datetime
 from collections import Counter
 from mediafile import MediaFile, Image, ImageType
 
@@ -42,21 +44,64 @@ def song_of(mf, fname, artist):
     return VIDEO_SUFFIX.sub("", t).strip()
 
 
+def find_by_album(album, artist, n):
+    query = f'release:"{album}"' + (f' AND artist:"{artist}"' if artist else "")
+    rels = mbget("release/", {"query": query, "fmt": "json", "limit": 25}).get("releases", [])
+    cand = [r for r in rels if r.get("track-count") == n] or rels
+    return cand[0]["id"] if cand else None
+
+
+def infer_release(artist, songs, n):
+    """Identify the album from the track names via MB recording search."""
+    hits, tcount = Counter(), {}
+    for song in [s for s in songs if s][:4]:
+        try:
+            res = mbget("recording/", {"query": f'artist:"{artist}" AND recording:"{song}"',
+                                       "fmt": "json", "limit": 10})
+        except Exception:
+            continue
+        seen = set()
+        for rec in res.get("recordings", []):
+            for rel in rec.get("releases", []):
+                rid = rel["id"]
+                if rid in seen:
+                    continue
+                seen.add(rid)
+                hits[rid] += 1
+                tc = rel.get("track-count")
+                if tc is None:
+                    tc = (rel.get("media") or [{}])[0].get("track-count")
+                if tc:
+                    tcount[rid] = tc
+        time.sleep(1.0)  # be polite to MusicBrainz
+    ranked = sorted(hits.items(), key=lambda kv: ((tcount.get(kv[0]) == n), kv[1]), reverse=True)
+    for rid, h in ranked:               # matching track count + seen for >=2 songs
+        if tcount.get(rid) == n and h >= 2:
+            return rid
+    for rid, h in ranked:               # fallback: matching track count
+        if tcount.get(rid) == n:
+            return rid
+    return None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("folder")
-    ap.add_argument("album", nargs="+")
+    ap.add_argument("album", nargs="*")
+    ap.add_argument("--auto", action="store_true", help="infer the album from the tracks")
     ap.add_argument("--artist")
     ap.add_argument("--release", help="force a MusicBrainz release MBID")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args()
-    album = " ".join(a.album)
+    album = " ".join(a.album) if a.album else None
+    if not album and not a.auto and not a.release:
+        sys.exit("give an album name, or use --auto")
 
     files = sorted(f for f in os.listdir(a.folder) if f.lower().endswith(AUDIO))
     if not files:
         sys.exit(f"no audio files in {a.folder}")
 
-    # album artist: from --artist, else the most common artist tag (feat. stripped)
+    # album artist: from --artist, else most common artist tag (feat. stripped)
     artist = a.artist
     if not artist:
         c = Counter()
@@ -66,17 +111,24 @@ def main():
             if ar:
                 c[re.sub(r"\s+feat\.?.*$", "", ar, flags=re.I).strip()] += 1
         artist = c.most_common(1)[0][0] if c else ""
-    print(f"artist: {artist or '(unknown)'}  |  album: {album}  |  {len(files)} files")
 
-    # pick a MusicBrainz release (prefer one whose track count matches)
+    # extract the song name from each file once
+    items = [(f, song_of(MediaFile(os.path.join(a.folder, f)), f, artist)) for f in files]
+    print(f"artist: {artist or '(unknown)'}  |  {len(files)} files")
+
+    # choose a MusicBrainz release
     rel_id = a.release
-    if not rel_id:
-        query = f'release:"{album}"' + (f' AND artist:"{artist}"' if artist else "")
-        rels = mbget("release/", {"query": query, "fmt": "json", "limit": 25}).get("releases", [])
-        cand = [r for r in rels if r.get("track-count") == len(files)] or rels
-        if not cand:
+    if not rel_id and album:
+        rel_id = find_by_album(album, artist, len(files))
+        if not rel_id:
             sys.exit("no MusicBrainz release found for that album/artist")
-        rel_id = cand[0]["id"]
+    if not rel_id and a.auto:
+        print("auto: identifying album from tracks…")
+        rel_id = infer_release(artist, [s for _, s in items], len(files))
+        if not rel_id:
+            print("auto: could not confidently identify the album — leaving files unchanged.")
+            print(f'   tag it manually with:  tag-album "{a.folder}" "<album name>" --write')
+            sys.exit(2)
 
     rel = mbget(f"release/{rel_id}", {"inc": "recordings+artist-credits", "fmt": "json"})
     date = rel.get("date", "") or ""
@@ -101,11 +153,19 @@ def main():
                     best = pp
         return best
 
+    plan = [(match(song), f, song) for f, song in items]
+    matched = sum(1 for p, _, _ in plan if p)
+
+    # auto safety-gate: refuse to write a shaky match (likely wrong album)
+    if a.auto and a.write and matched < max(2, int(len(files) * 0.6)):
+        print(f"auto: only {matched}/{len(files)} tracks matched — not writing (wrong album?).")
+        print(f'   tag it manually with:  tag-album "{a.folder}" "<album name>" --write')
+        sys.exit(2)
+
     art = None
     if a.write:
         try:
-            req = urllib.request.Request(f"{CAA}/release/{rel_id}/front-500",
-                                         headers={"User-Agent": UA})
+            req = urllib.request.Request(f"{CAA}/release/{rel_id}/front-500", headers={"User-Agent": UA})
             art = urllib.request.urlopen(req, timeout=30).read()
         except Exception as e:
             print("cover art unavailable:", e)
@@ -118,13 +178,11 @@ def main():
         except Exception:
             d = datetime.date(int(parts[0]), 1, 1)
 
-    plan = []
-    for f in files:
-        mf = MediaFile(os.path.join(a.folder, f))
-        song = song_of(mf, f, artist)
-        pos = match(song)
-        plan.append((pos, f, song))
-        if a.write and pos:
+    if a.write:
+        for pos, f, _ in plan:
+            if not pos:
+                continue
+            mf = MediaFile(os.path.join(a.folder, f))
             title, ac = tracks[pos]
             mf.title = title
             mf.artist = ac if (ac and norm(ac) != norm(artist)) else artist
@@ -142,7 +200,6 @@ def main():
                 mf.images = [Image(data=art, type=ImageType.front, desc="Front")]
             mf.save()
 
-    matched = sum(1 for p, _, _ in plan if p)
     print(f"{'WROTE' if a.write else 'DRY-RUN'} — {matched}/{len(files)} matched:")
     for pos, f, song in sorted(plan, key=lambda r: (r[0] or 99)):
         print(f"  {str(pos or '?'):>2}  {tracks.get(pos, ('??',))[0]:<34} <- [{song}]")

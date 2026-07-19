@@ -1,22 +1,41 @@
 #!/usr/bin/env bash
-# getmusic URL [URL...] — download audio into /card/music as MP3, tag it, refresh MPD.
+# getmusic [--no-tag] [--album "NAME"] URL [URL...]
 #
-# Always re-encodes to MP3 (`--audio-quality 0` = highest VBR) for maximum device
-# compatibility, and embeds cover art + metadata. Filenames are shell-friendly
-# (`--restrict-filenames`: ASCII only, spaces -> underscores, no ()/&/' etc.),
-# for both the artist folder and the track name. Works with YouTube, Bandcamp,
-# SoundCloud, playlists, etc. (anything yt-dlp supports). A download-archive skips
-# anything already grabbed, so re-running a playlist URL only fetches new tracks.
+# Download audio into /card/music as MP3, then automatically tag it from
+# MusicBrainz (via tag-album) and refresh MPD. Always MP3 (`--audio-quality 0`
+# = highest VBR) with shell-friendly names (`--restrict-filenames`), embedding
+# cover art + metadata. Works with YouTube, Bandcamp, SoundCloud, playlists, etc.
+# A download-archive skips anything already grabbed.
+#
+#   --album "NAME"  tag against this exact album (most reliable) instead of
+#                   letting tag-album auto-detect it.
+#   --no-tag        just download; skip the MusicBrainz tagging step.
 set -euo pipefail
 
 dest="/card/music"
+no_tag=0
+album=""
+urls=()
+while [ "$#" -gt 0 ]; do
+	case "$1" in
+		--no-tag)   no_tag=1; shift ;;
+		--album)    album="${2:-}"; shift 2 ;;
+		--album=*)  album="${1#--album=}"; shift ;;
+		--)         shift; while [ "$#" -gt 0 ]; do urls+=("$1"); shift; done ;;
+		*)          urls+=("$1"); shift ;;
+	esac
+done
 
-if [ "$#" -eq 0 ]; then
-	echo "usage: getmusic <url> [url...]" >&2
+if [ "${#urls[@]}" -eq 0 ]; then
+	echo "usage: getmusic [--no-tag] [--album \"NAME\"] <url> [url...]" >&2
 	exit 1
 fi
 
 mkdir -p "$dest"
+
+# Snapshot the library so we can tell which folders received new tracks.
+before=$(mktemp)
+find "$dest" -type f -name '*.mp3' 2>/dev/null | sort > "$before"
 
 yt-dlp \
 	--extract-audio --audio-format mp3 --audio-quality 0 \
@@ -24,11 +43,25 @@ yt-dlp \
 	--restrict-filenames \
 	--download-archive "$dest/.archive" \
 	--output "$dest/%(artist,uploader)s/%(title)s.%(ext)s" \
-	"$@"
+	"${urls[@]}"
 
-# Nudge MPD to index the new files (auto_update usually already caught them).
-if command -v mpc >/dev/null 2>&1; then
-	mpc update >/dev/null 2>&1 || true
+# Folders that got new files this run.
+after=$(mktemp)
+find "$dest" -type f -name '*.mp3' 2>/dev/null | sort > "$after"
+mapfile -t newdirs < <(comm -13 "$before" "$after" | xargs -r -d '\n' -n1 dirname | sort -u)
+rm -f "$before" "$after"
+
+# Auto-tag each new folder from MusicBrainz.
+if [ "$no_tag" -eq 0 ] && [ "${#newdirs[@]}" -gt 0 ] && command -v tag-album >/dev/null 2>&1; then
+	for d in "${newdirs[@]}"; do
+		echo "── tagging: $d"
+		if [ -n "$album" ]; then
+			tag-album "$d" "$album" --write || echo "   (tagging skipped — see above)"
+		else
+			tag-album "$d" --auto --write || echo "   (auto-tag skipped — run: tag-album \"$d\" \"<album>\" --write)"
+		fi
+	done
 fi
 
+command -v mpc >/dev/null 2>&1 && mpc update >/dev/null 2>&1 || true
 echo "Done → $dest"
