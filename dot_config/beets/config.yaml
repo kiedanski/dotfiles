@@ -1,0 +1,42 @@
+# beets — music library manager for /card/music.
+# Fixes tags via MusicBrainz + acoustic fingerprint (chromaprint), fetches and
+# embeds cover art, and keeps shell-friendly ASCII, no-space file paths.
+# Import a folder with:  beet import /card/music/<folder>
+#   -q for quiet/auto (apply strong matches, skip the rest)
+
+directory: /card/music
+library: ~/.config/beets/library.db
+
+plugins: chroma fetchart embedart scrub duplicates
+
+import:
+    move: yes           # reorganize files into the library layout below
+    write: yes           # write the corrected tags into the files
+    incremental: yes     # remember imported folders; re-runs skip them
+    resume: ask
+
+# --- filenames: ASCII, no spaces, shell-safe (matches getmusic's convention) ---
+asciify_paths: yes
+paths:
+    default: ${albumartist}/${album}%aunique{}/${track}_-_${title}
+    singleton: ${artist}/${title}
+    comp: Compilations/${album}%aunique{}/${track}_-_${title}
+replace:
+    '[\\/]': _
+    '\s+': _
+    '[<>:"\?\*\|]': _
+    '^\.': _
+    '\.$': _
+
+# --- tagging ---
+chroma:
+    auto: yes            # acoustic fingerprint match (chromaprint + pyacoustid)
+scrub:
+    auto: yes            # strip messy pre-existing tags before writing clean ones
+
+# --- cover art ---
+fetchart:
+    auto: yes
+embedart:
+    auto: yes
+    remove_art_file: yes
