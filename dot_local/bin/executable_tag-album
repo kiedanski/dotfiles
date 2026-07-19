@@ -25,6 +25,21 @@ AUDIO = (".mp3", ".m4a", ".opus", ".flac", ".ogg")
 VIDEO_SUFFIX = re.compile(
     r"\s*\((?:Official Music Video|Official Video|Lyric Video|Lyrics|Visualizer|Audio|Video)\)\s*$", re.I)
 
+try:
+    from unidecode import unidecode
+except Exception:
+    def unidecode(s):
+        return s
+
+
+def sanitize(s):
+    """Shell-friendly path component: ASCII, no spaces (matches getmusic naming)."""
+    s = unidecode(s or "")
+    s = re.sub(r"[\\/]+", "_", s)
+    s = re.sub(r"\s+", "_", s)
+    s = re.sub(r"[^A-Za-z0-9._-]", "", s)
+    return re.sub(r"_+", "_", s).strip("_.") or "Unknown"
+
 
 def mbget(path, params):
     req = urllib.request.Request(f"{MB}/{path}?{urllib.parse.urlencode(params)}",
@@ -92,6 +107,10 @@ def main():
     ap.add_argument("--artist")
     ap.add_argument("--release", help="force a MusicBrainz release MBID")
     ap.add_argument("--write", action="store_true")
+    ap.add_argument("--library", default="/card/music",
+                    help="root the <Artist>/<Album>/ layout lives under (default /card/music)")
+    ap.add_argument("--no-organize", action="store_true",
+                    help="tag in place; don't move files into <Artist>/<Album>/ folders")
     a = ap.parse_args()
     album = " ".join(a.album) if a.album else None
     if not album and not a.auto and not a.release:
@@ -178,11 +197,15 @@ def main():
         except Exception:
             d = datetime.date(int(parts[0]), 1, 1)
 
+    organize = a.write and not a.no_organize
+    album_dir = os.path.join(a.library, sanitize(artist), sanitize(rel.get("title"))) if organize else None
+    moved = 0
     if a.write:
         for pos, f, _ in plan:
             if not pos:
                 continue
-            mf = MediaFile(os.path.join(a.folder, f))
+            src = os.path.join(a.folder, f)
+            mf = MediaFile(src)
             title, ac = tracks[pos]
             mf.title = title
             mf.artist = ac if (ac and norm(ac) != norm(artist)) else artist
@@ -199,8 +222,24 @@ def main():
             if art:
                 mf.images = [Image(data=art, type=ImageType.front, desc="Front")]
             mf.save()
+            if organize:
+                os.makedirs(album_dir, exist_ok=True)
+                ext = f.rsplit(".", 1)[-1].lower()
+                dst = os.path.join(album_dir, f"{pos:02d}_-_{sanitize(title)}.{ext}")
+                if os.path.abspath(dst) != os.path.abspath(src):
+                    if os.path.exists(dst):
+                        print(f"  ! target exists, not moving: {dst}")
+                    else:
+                        os.rename(src, dst)
+                        moved += 1
+        if organize:
+            try:  # tidy up the source dir if everything moved out of it
+                os.rmdir(a.folder)
+            except OSError:
+                pass
 
-    print(f"{'WROTE' if a.write else 'DRY-RUN'} — {matched}/{len(files)} matched:")
+    print(f"{'WROTE' if a.write else 'DRY-RUN'} — {matched}/{len(files)} matched"
+          + (f", {moved} filed under {album_dir}" if organize and moved else "") + ":")
     for pos, f, song in sorted(plan, key=lambda r: (r[0] or 99)):
         print(f"  {str(pos or '?'):>2}  {tracks.get(pos, ('??',))[0]:<34} <- [{song}]")
     unmatched = [f for p, f, _ in plan if not p]
