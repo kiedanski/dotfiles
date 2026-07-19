@@ -1,38 +1,27 @@
 #!/usr/bin/env bash
-# getmusic URL [URL...] — download audio into /card/music, tag it, refresh MPD.
+# getmusic URL [URL...] — download audio into /card/music as MP3, tag it, refresh MPD.
 #
-# Keeps the source codec (usually opus/m4a) — no re-encode, best quality — and
-# embeds cover art + metadata. Works with YouTube, Bandcamp, SoundCloud,
-# playlists, etc. (anything yt-dlp supports). A download-archive skips anything
-# already grabbed, so re-running a playlist URL only fetches new tracks.
-#
-# For a universally-compatible library (e.g. a car stereo), add: --to-mp3
+# Always re-encodes to MP3 (`--audio-quality 0` = highest VBR) for maximum device
+# compatibility, and embeds cover art + metadata. Works with YouTube, Bandcamp,
+# SoundCloud, playlists, etc. (anything yt-dlp supports). A download-archive skips
+# anything already grabbed, so re-running a playlist URL only fetches new tracks.
 set -euo pipefail
 
 dest="/card/music"
-audio_format=()          # native codec by default
 
-args=()
-for a in "$@"; do
-	case "$a" in
-		--to-mp3) audio_format=(--audio-format mp3) ;;
-		*)        args+=("$a") ;;
-	esac
-done
-
-if [ "${#args[@]}" -eq 0 ]; then
-	echo "usage: getmusic [--to-mp3] <url> [url...]" >&2
+if [ "$#" -eq 0 ]; then
+	echo "usage: getmusic <url> [url...]" >&2
 	exit 1
 fi
 
 mkdir -p "$dest"
 
 yt-dlp \
-	--extract-audio --audio-quality 0 "${audio_format[@]}" \
+	--extract-audio --audio-format mp3 --audio-quality 0 \
 	--embed-thumbnail --embed-metadata --embed-chapters \
 	--download-archive "$dest/.archive" \
 	--output "$dest/%(artist,uploader)s/%(title)s.%(ext)s" \
-	"${args[@]}"
+	"$@"
 
 # Nudge MPD to index the new files (auto_update usually already caught them).
 if command -v mpc >/dev/null 2>&1; then
