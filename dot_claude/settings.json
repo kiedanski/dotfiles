@@ -126,7 +126,7 @@
       "command": "/Users/rebelde/.local/share/uv/tools/repowise/bin/repowise",
       "args": [
         "mcp",
-        "/Users/rebelde/workspace/fde-org",
+        "/Users/rebelde/workspace/circular-software",
         "--transport",
         "stdio"
       ],
