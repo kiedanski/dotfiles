@@ -159,6 +159,19 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "repowise-rewrite",
+            "timeout": 5,
+            "statusMessage": "Distilling command output..."
+          }
+        ]
+      }
     ]
   },
   "env": {
