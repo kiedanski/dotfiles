@@ -1,4 +1,7 @@
 {
+  "env": {
+    "ENABLE_TOOL_SEARCH": "true"
+  },
   "permissions": {
     "allow": [
       "Bash(./hack/spec_metadata.sh)",
@@ -94,45 +97,6 @@
     ],
     "defaultMode": "auto"
   },
-  "enabledPlugins": {
-    "voicemode@voicemode": true,
-    "slack@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": true,
-    "vercel@claude-plugins-official": true,
-    "fde-dev@fde-org": true,
-    "fde-byoc@fde-org": true
-  },
-  "extraKnownMarketplaces": {
-    "voicemode": {
-      "source": {
-        "source": "github",
-        "repo": "mbailey/voicemode"
-      }
-    }
-  },
-  "effortLevel": "xhigh",
-  "skipDangerousModePermissionPrompt": true,
-  "skipWorkflowUsageWarning": true,
-  "editorMode": "normal",
-  "preferredNotifChannel": "ghostty",
-  "autoCompactEnabled": false,
-  "remoteControlAtStartup": true,
-  "inputNeededNotifEnabled": true,
-  "agentPushNotifEnabled": true,
-  "skipAutoPermissionPrompt": true,
-  "voiceEnabled": true,
-  "mcpServers": {
-    "repowise": {
-      "command": "/Users/rebelde/.local/share/uv/tools/repowise/bin/repowise",
-      "args": [
-        "mcp",
-        "/Users/rebelde/workspace/circular-software",
-        "--transport",
-        "stdio"
-      ],
-      "description": "repowise: codebase intelligence \u2014 docs, graph, git signals, dead code, decisions"
-    }
-  },
   "hooks": {
     "PostToolUse": [
       {
@@ -174,7 +138,49 @@
       }
     ]
   },
-  "env": {
-    "ENABLE_TOOL_SEARCH": "true"
+  "enabledPlugins": {
+    "voicemode@voicemode": true,
+    "slack@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "vercel@claude-plugins-official": true,
+    "fde-dev@fde-org": true,
+    "fde-byoc@fde-org": true
+  },
+  "extraKnownMarketplaces": {
+    "voicemode": {
+      "source": {
+        "source": "github",
+        "repo": "mbailey/voicemode"
+      }
+    },
+    "omc": {
+      "source": {
+        "source": "github",
+        "repo": "Yeachan-Heo/oh-my-claudecode"
+      }
+    }
+  },
+  "effortLevel": "xhigh",
+  "skipDangerousModePermissionPrompt": true,
+  "skipWorkflowUsageWarning": true,
+  "editorMode": "normal",
+  "preferredNotifChannel": "ghostty",
+  "autoCompactEnabled": false,
+  "remoteControlAtStartup": true,
+  "inputNeededNotifEnabled": true,
+  "agentPushNotifEnabled": true,
+  "skipAutoPermissionPrompt": true,
+  "voiceEnabled": true,
+  "mcpServers": {
+    "repowise": {
+      "command": "/Users/rebelde/.local/share/uv/tools/repowise/bin/repowise",
+      "args": [
+        "mcp",
+        "/Users/rebelde/workspace/circular-software",
+        "--transport",
+        "stdio"
+      ],
+      "description": "repowise: codebase intelligence — docs, graph, git signals, dead code, decisions"
+    }
   }
 }
