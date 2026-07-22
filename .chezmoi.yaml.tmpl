@@ -8,6 +8,11 @@
 {{- $op_vault := promptStringOnce . "op_vault" "1Password vault for chezmoi secrets" "Chezmoi" -}}
 {{- $tilde_host := promptStringOnce . "tilde_host" "CalDAV/CardDAV host for calendars and contacts" "dav.example.com" -}}
 
+encryption: "age"
+age:
+  identity: "{{ .chezmoi.homeDir }}/.config/chezmoi/key.txt"
+  recipient: "age1lu9ut79ufd20u7xfpvx2m96ax03nlw2u46eykphgy63shy6j2f2q485up7"
+
 git:
   autoCommit: true
   autoPush: true
