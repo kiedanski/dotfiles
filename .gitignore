@@ -6,3 +6,6 @@ dot_claude/plans/
 dot_claude/sessions/
 dot_claude/image-cache/
 dot_claude/mcp-needs-auth-cache.json
+
+# OMC session/state data (secret, ephemeral) — never commit
+.omc/

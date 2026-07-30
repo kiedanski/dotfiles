@@ -1,6 +1,27 @@
 # Claude Config
 
-Personal Claude Code setup — commands, skills, and customizations.
+Personal Claude Code setup — skills and customizations. (Slash commands under `commands/` are
+deprecated; author entrypoints as skills.)
+
+## Feature-shipping pipeline
+
+A self-driving, step-enforced pipeline for building features in repos that carry an
+`.agents/manifest.yml` contract. Built on oh-my-claudecode (OMC) as the engine.
+
+- **`/ship <feature>`** → `skills/ship/SKILL.md`. Drives research → grill → spec → implement → 2×
+  review → test → quality gate, reading the per-repo manifest and blocking turn-end until each gate
+  passes. Persists run-state to the repo's `.omc/state/ship-<slug>.json`.
+- **`/retro`** → `skills/retro/SKILL.md`. Mines your sessions + git for recurring mistakes and proposes
+  ratchet-shaped fixes (ast-grep rule / eslint ban / golden-path row / charter reviewer / checklist
+  concern / doc fix), each Apply/Edit/Skip. Global + cross-project; ratchets land in the current repo.
+- **Charter reviewers** live IN each project at `.claude/agents/review-*.md` (they encode that repo's
+  conventions and are spawned by name during `/ship`'s review stage). The harness + `/retro` stay
+  global here; project-specific reviewers travel with the code.
+- **Escape hatches:** `SKIP_QUALITY_GATE=1` (one turn), `OMC_SKIP_HOOKS=…` / `DISABLE_OMC=1`, `/cancel`.
+
+The per-repo contract (`.agents/manifest.yml` + `AGENTS.md`) and the deterministic gates
+(`scripts/quality-gate.sh`, `render-readiness.js`, `check-readiness.js`, `gen-schema-reference.js`)
+live in the repo, not here.
 
 ## Sessions
 
