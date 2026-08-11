@@ -222,12 +222,12 @@
     "repowise": {
       "args": [
         "mcp",
-        "/Users/rebelde/workspace/mono-better",
+        "/Users/rebelde/workspace/monolith",
         "--transport",
         "stdio"
       ],
       "command": "/Users/rebelde/.local/share/uv/tools/repowise/bin/repowise",
-      "description": "repowise: codebase intelligence — docs, graph, git signals, dead code, decisions"
+      "description": "repowise: codebase intelligence \u2014 docs, graph, git signals, dead code, decisions"
     }
   }
 }
