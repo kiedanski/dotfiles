@@ -239,6 +239,5 @@
       "command": "/Users/rebelde/.local/share/uv/tools/repowise/bin/repowise",
       "description": "repowise: codebase intelligence — docs, graph, git signals, dead code, decisions"
     }
-  },
-  "model": "claude-fable-5[1m]"
+  }
 }
