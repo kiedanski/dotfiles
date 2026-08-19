@@ -1,143 +1,6 @@
 {
-  "agentPushNotifEnabled": true,
-  "autoCompactEnabled": false,
-  "editorMode": "normal",
-  "effortLevel": "xhigh",
-  "enabledPlugins": {
-    "fde-byoc@fde-org": true,
-    "fde-dev@fde-org": true,
-    "frontend-design@claude-plugins-official": true,
-    "oh-my-claudecode@omc": true,
-    "slack@claude-plugins-official": true,
-    "vercel@claude-plugins-official": true,
-    "voicemode@voicemode": true
-  },
   "env": {
     "ENABLE_TOOL_SEARCH": "true"
-  },
-  "extraKnownMarketplaces": {
-    "omc": {
-      "source": {
-        "repo": "Yeachan-Heo/oh-my-claudecode",
-        "source": "github"
-      }
-    },
-    "voicemode": {
-      "source": {
-        "repo": "mbailey/voicemode",
-        "source": "github"
-      }
-    }
-  },
-  "hooks": {
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "command": "openkanban status set waiting",
-            "type": "command"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "hooks": [
-          {
-            "command": "repowise-augment",
-            "statusMessage": "Checking codebase context...",
-            "timeout": 10,
-            "type": "command"
-          }
-        ],
-        "matcher": "Bash|PowerShell|Grep|Glob|Read|Edit|Write|mcp__.*[Rr]epowise.*__.*"
-      },
-      {
-        "hooks": [
-          {
-            "command": "openkanban status set working",
-            "type": "command"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "hooks": [
-          {
-            "command": "repowise-rewrite",
-            "statusMessage": "Distilling command output...",
-            "timeout": 5,
-            "type": "command"
-          }
-        ],
-        "matcher": "Bash|PowerShell"
-      }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "command": "repowise-augment",
-            "statusMessage": "Loading repowise context...",
-            "timeout": 10,
-            "type": "command"
-          }
-        ],
-        "matcher": "startup|resume|clear"
-      },
-      {
-        "hooks": [
-          {
-            "command": "openkanban status set working",
-            "type": "command"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "command": "'/Users/rebelde/.local/bin/jcode' setup-hotkey --notify-cli-launch claude",
-            "timeout": 5,
-            "type": "command"
-          }
-        ],
-        "matcher": "startup|resume"
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "command": "openkanban status set idle",
-            "type": "command"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "command": "openkanban status set working",
-            "type": "command"
-          }
-        ]
-      }
-    ]
-  },
-  "inputNeededNotifEnabled": true,
-  "mcpServers": {
-    "repowise": {
-      "args": [
-        "mcp",
-        "/Users/rebelde/workspace/monolith",
-        "--transport",
-        "stdio"
-      ],
-      "command": "/Users/rebelde/.local/share/uv/tools/repowise/bin/repowise",
-      "description": "repowise: codebase intelligence — docs, graph, git signals, dead code, decisions"
-    }
   },
   "permissions": {
     "allow": [
@@ -234,10 +97,148 @@
     ],
     "defaultMode": "auto"
   },
-  "preferredNotifChannel": "ghostty",
-  "remoteControlAtStartup": true,
-  "skipAutoPermissionPrompt": true,
+  "hooks": {
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "openkanban status set waiting"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|PowerShell|Grep|Glob|Read|Edit|Write|mcp__.*[Rr]epowise.*__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "repowise-augment",
+            "timeout": 10,
+            "statusMessage": "Checking codebase context..."
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "openkanban status set working"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "repowise-rewrite",
+            "timeout": 5,
+            "statusMessage": "Distilling command output..."
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "repowise-augment",
+            "timeout": 10,
+            "statusMessage": "Loading repowise context..."
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "openkanban status set working"
+          }
+        ]
+      },
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'/Users/rebelde/.local/bin/jcode' setup-hotkey --notify-cli-launch claude",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "openkanban status set idle"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "openkanban status set working"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "fde-byoc@fde-org": true,
+    "fde-dev@fde-org": true,
+    "frontend-design@claude-plugins-official": true,
+    "oh-my-claudecode@omc": true,
+    "slack@claude-plugins-official": true,
+    "vercel@claude-plugins-official": true,
+    "voicemode@voicemode": true
+  },
+  "extraKnownMarketplaces": {
+    "omc": {
+      "source": {
+        "source": "github",
+        "repo": "Yeachan-Heo/oh-my-claudecode"
+      }
+    },
+    "voicemode": {
+      "source": {
+        "source": "github",
+        "repo": "mbailey/voicemode"
+      }
+    }
+  },
+  "effortLevel": "xhigh",
   "skipDangerousModePermissionPrompt": true,
   "skipWorkflowUsageWarning": true,
-  "voiceEnabled": true
+  "editorMode": "normal",
+  "preferredNotifChannel": "ghostty",
+  "autoCompactEnabled": false,
+  "remoteControlAtStartup": true,
+  "inputNeededNotifEnabled": true,
+  "agentPushNotifEnabled": true,
+  "skipAutoPermissionPrompt": true,
+  "voiceEnabled": true,
+  "mcpServers": {
+    "repowise": {
+      "args": [
+        "mcp",
+        "/Users/rebelde/workspace/monolith",
+        "--transport",
+        "stdio"
+      ],
+      "command": "/Users/rebelde/.local/share/uv/tools/repowise/bin/repowise",
+      "description": "repowise: codebase intelligence — docs, graph, git signals, dead code, decisions"
+    }
+  },
+  "model": "claude-fable-5[1m]"
 }
