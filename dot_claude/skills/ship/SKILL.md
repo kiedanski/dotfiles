@@ -175,6 +175,10 @@ brute-force a local environment to run it.**
 - Set `active:false` in the run-state file.
 - Advisory `merge-readiness`; let openkanban's hook update board status (don't set it by hand).
 - Commit (respect the repo's commit convention) and open the PR only when the user asks.
+- **OpenSpec-aware repos:** once the PR merges, sync/archive the change (the repo's
+  openspec sync skill or CLI) so the delta folds into `openspec/specs/` — the capability specs
+  must absorb every merged change, or the spec-as-source-of-truth loop breaks. Never leave a
+  merged change unsynced.
 - **Cleanup — ASK first, then do it.** After the PR/commit, ask via `AskUserQuestion` whether to clean
   up the isolation: `git worktree remove <path>` and/or delete the local `<slug>` branch. Do it ONLY
   on an explicit yes, and NEVER remove a worktree or branch that still holds uncommitted/unmerged work
