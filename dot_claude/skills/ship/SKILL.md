@@ -101,6 +101,12 @@ Advance in order. After each stage, update run-state and **do not proceed until 
 ### Stage 3 — Spec (+ the readiness HARD GATE)
 - `Task(subagent_type="oh-my-claudecode:planner")` with `--consensus`, plus `analyst` (gaps),
   `designer` (styling if UI), and `critic` (adversarial review of the plan). Produces `.omc/plans/*.md`.
+- **OpenSpec-aware repos:** the plan lands as OpenSpec artifacts, not loose files —
+  `openspec/changes/<change_id>/design.md` (approach + open questions), `tasks.md` (the checklist
+  Stage 4 works through), and delta specs under `changes/<change_id>/specs/<capability>/`
+  (`## ADDED/MODIFIED Requirements`, following the repo's spec conventions in
+  `openspec/config.yaml`). If the manifest declares an openspec lint (e.g.
+  `validation.lint_openspec`), it must pass here — treat it as part of this stage's gate.
 - Render the readiness doc and require it filled:
   - `node scripts/render-readiness.js <slug>` → `.omc/readiness/<slug>.md` (impact map + concerns).
   - Fill **every** Answer cell (`N/A — <reason>` is valid; a blank is a bug).
