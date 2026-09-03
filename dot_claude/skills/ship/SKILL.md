@@ -10,8 +10,8 @@ pipeline yourself, forcing every stage and its gate. You do not hand the wheel b
 between stages; you advance stage-by-stage and only stop when the diff is green and the readiness
 doc is fully answered — or when a gate genuinely needs a human decision.
 
-OMC is the engine (you spawn its agents). openkanban is the board (leave its hooks alone). The
-per-repo `.agents/manifest.yml` is the contract you read; `AGENTS.md` is its prose companion.
+OMC is the engine (you spawn its agents). The per-repo `.agents/manifest.yml` is the contract you
+read; `AGENTS.md` is its prose companion.
 
 ## 0. Preconditions
 
@@ -173,7 +173,7 @@ brute-force a local environment to run it.**
 
 ## 3. Wind-down
 - Set `active:false` in the run-state file.
-- Advisory `merge-readiness`; let openkanban's hook update board status (don't set it by hand).
+- Advisory `merge-readiness`.
 - Commit (respect the repo's commit convention) and open the PR only when the user asks.
 - **OpenSpec-aware repos:** once the PR merges, sync/archive the change (the repo's
   openspec sync skill or CLI) so the delta folds into `openspec/specs/` — the capability specs
