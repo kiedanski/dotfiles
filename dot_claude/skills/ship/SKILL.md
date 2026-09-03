@@ -41,6 +41,7 @@ Do NOT write it to some other/shared checkout.
 ```json
 {
   "slug": "csv-export-vouchers",
+  "change_id": "csv-export-vouchers",
   "feature": "add a CSV export button to the vouchers page",
   "branch": "csv-export-vouchers",
   "worktree": "../myapp-csv-export-vouchers",
@@ -89,6 +90,12 @@ Advance in order. After each stage, update run-state and **do not proceed until 
      research surfaced.
 - Don't stop at the first plausible interpretation; probe each manifest surface and each concern explicitly.
 - Emits `.omc/specs/deep-interview-<slug>.md` — it records the answered **surface scope** + concerns.
+- **OpenSpec-aware repos** (the repo carries `openspec/config.yaml`): also ask the triage question —
+  *is this a violation of an existing capability spec (bug: cite the requirement ID) or a change to
+  specced behavior (spec delta comes first)?* — and seed `openspec/changes/<change_id>/proposal.md`
+  from the interview (Why / What changes / Non-goals, plus whatever the repo's
+  `openspec/config.yaml` `rules.proposal` requires). The proposal is the durable record; the
+  interview file is scratch. Record `change_id` in run-state.
 - **Gate:** ambiguity below threshold AND the surface scope is **explicitly established** (asked, not inferred).
 
 ### Stage 3 — Spec (+ the readiness HARD GATE)
