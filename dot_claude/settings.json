@@ -99,16 +99,6 @@
   },
   "model": "claude-fable-5[1m]",
   "hooks": {
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "openkanban status set waiting"
-          }
-        ]
-      }
-    ],
     "PostToolUse": [
       {
         "matcher": "Bash|PowerShell|Grep|Glob|Read|Edit|Write|mcp__.*[Rr]epowise.*__.*",
@@ -118,14 +108,6 @@
             "command": "repowise-augment",
             "timeout": 10,
             "statusMessage": "Checking codebase context..."
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "openkanban status set working"
           }
         ]
       }
@@ -156,40 +138,12 @@
         ]
       },
       {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "openkanban status set working"
-          }
-        ]
-      },
-      {
         "matcher": "startup|resume",
         "hooks": [
           {
             "type": "command",
             "command": "'/Users/rebelde/.local/bin/jcode' setup-hotkey --notify-cli-launch claude",
             "timeout": 5
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "openkanban status set idle"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "openkanban status set working"
           }
         ]
       }
@@ -238,7 +192,7 @@
         "stdio"
       ],
       "command": "/Users/rebelde/.local/share/uv/tools/repowise/bin/repowise",
-      "description": "repowise: codebase intelligence — docs, graph, git signals, dead code, decisions"
+      "description": "repowise: codebase intelligence \u2014 docs, graph, git signals, dead code, decisions"
     }
   }
 }
