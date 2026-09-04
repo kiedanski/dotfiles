@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Self-driving, step-enforced feature pipeline. Invoked by `/ship <feature>`. Composes oh-my-claudecode (OMC) agents to run research → grill → spec → implement → 2× review → test → quality gate, reading the per-repo `.agents/manifest.yml` contract and blocking turn-end until each stage's gate passes. Use whenever the user asks to build/ship a feature in a repo that carries `.agents/manifest.yml`.
+description: Self-driving, step-enforced feature pipeline. Invoked by `/ship <feature>`. Composes oh-my-claudecode (OMC) agents to run research → grill → spec → implement → verify locally (iterate until it runs) → 2× review → quality gate, reading the per-repo `.agents/manifest.yml` contract and blocking turn-end until each stage's gate passes. Use whenever the user asks to build/ship a feature in a repo that carries `.agents/manifest.yml`.
 ---
 
 # /ship — the self-driving feature pipeline
@@ -49,7 +49,7 @@ Do NOT write it to some other/shared checkout.
   "active": true,
   "stage": "spec",
   "stages": { "research":"done","grill":"done","spec":"in_progress",
-              "implement":"pending","review":"pending","test":"pending","gate":"pending" },
+              "implement":"pending","verify":"pending","review":"pending","gate":"pending" },
   "hardGateMet": false
 }
 ```
