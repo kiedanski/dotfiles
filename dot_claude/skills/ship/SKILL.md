@@ -132,9 +132,12 @@ fix, re-verify; only a green verification unlocks Stage 6.
   command (manifest `run` / `AGENTS.md`) and bring it up — a declared stack is built for cheap
   per-worktree bring-up, so actually use it. Drive Chrome via `claude-in-chrome` +
   `Skill("oh-my-claudecode:visual-verdict")` on the impacted surfaces' real entry points — don't
-  infer "works" from a 200. Capture **screenshots as evidence** (for bug fixes: reproduce on the
-  stack BEFORE the fix, re-verify AFTER — before/after shots when UI-visible, per the manifest's
-  checklist).
+  infer "works" from a 200. **Any UI-visible change — however small the design tweak — is verified
+  with REAL screenshots of the running app, never with claims inferred from reading the code**
+  (grep/SSR-HTML "evidence" of a rendered label is a known false positive; only a capture of the
+  actual DOM counts). For bug fixes: reproduce on the stack BEFORE the fix, re-verify AFTER —
+  before/after shots when UI-visible, per the manifest's checklist. The screenshots are part of the
+  run's evidence; show them, don't summarize them.
   - **Only if there's NO declared stack, or standing one up needs manual provisioning (DB auth,
     missing `.env`, no seed script, …): STOP.** Per the browser-automation guidance this is a rabbit
     hole — don't brute-force env setup. Record the UI arm as `N/A — not runnable locally: <reason>`
