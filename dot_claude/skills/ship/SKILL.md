@@ -121,7 +121,32 @@ Advance in order. After each stage, update run-state and **do not proceed until 
   `isolation:"worktree"` only if executors would otherwise write the same files.
 - **Gate:** the feature is implemented and `npm run build` / `make build` succeeds.
 
-### Stage 5 — Review (2× independent + charter lenses)
+### Stage 5 — Verify locally (iterate until it actually works)
+**Execute first, review later: reviewers are never spawned against code that hasn't been run.**
+This stage comes BEFORE review on purpose — review effort goes to correctness and design, not to
+discovering the feature doesn't boot. Iterate freely: a red verification loops back to Stage 4,
+fix, re-verify; only a green verification unlocks Stage 6.
+- **DB / CLI / API / logic (always, mandatory):** `Task(subagent_type="oh-my-claudecode:qa-tester")` (tmux) + the
+  project's unit/integration tests (`make test` / `npm test`).
+- **UI / browser (default whenever the manifest declares a run stack):** look up the project's stack
+  command (manifest `run` / `AGENTS.md`) and bring it up — a declared stack is built for cheap
+  per-worktree bring-up, so actually use it. Drive Chrome via `claude-in-chrome` +
+  `Skill("oh-my-claudecode:visual-verdict")` on the impacted surfaces' real entry points — don't
+  infer "works" from a 200. Capture **screenshots as evidence** (for bug fixes: reproduce on the
+  stack BEFORE the fix, re-verify AFTER — before/after shots when UI-visible, per the manifest's
+  checklist).
+  - **Only if there's NO declared stack, or standing one up needs manual provisioning (DB auth,
+    missing `.env`, no seed script, …): STOP.** Per the browser-automation guidance this is a rabbit
+    hole — don't brute-force env setup. Record the UI arm as `N/A — not runnable locally: <reason>`
+    in the run notes, and either ask the human to do the visual check or defer browser QA to a
+    provisioned env / reviewer. **Never fake a pass.**
+- **Gate:** the mandatory non-browser verification passes AND the browser arm is either done or
+  explicitly recorded `N/A — <reason>` (a declared, working stack makes N/A invalid). Do not advance
+  to review with a red or unexecuted verification.
+
+### Stage 6 — Review (2× independent + charter lenses)
+The diff reviewers receive has already run green locally (Stage 5) — their findings are about
+correctness, design, and project convention, not basic function.
 - Two **independent** general reviewers on the diff: `Task(subagent_type="oh-my-claudecode:code-reviewer")`
   and `Task(subagent_type="oh-my-claudecode:critic")`. Add `Task(subagent_type="oh-my-claudecode:security-reviewer")`
   whenever auth / permissions / sensitive data is touched.
@@ -131,27 +156,10 @@ Advance in order. After each stage, update run-state and **do not proceed until 
   a surface→reviewer mapping here — the project owns it** (read the reviewers' descriptions and
   `.claude/agents/README.md`). Each is read-only and returns `file:line — problem` or `CLEAN`. Spawn the
   selected ones in parallel: `Task(subagent_type="<review-agent-name>", ...)`.
-- Triage every finding; fix real ones (loop back to stage 4 if needed). **Encode recurring mistakes
-  as ratchets, not prose** (ast-grep rule / eslint ban / golden-path row / charter reviewer / checklist
-  concern) — that's what `/retro` later automates.
+- Triage every finding; fix real ones (loop back to stage 4, and re-run the Stage 5 verification if
+  behavior changed). **Encode recurring mistakes as ratchets, not prose** (ast-grep rule / eslint ban /
+  golden-path row / charter reviewer / checklist concern) — that's what `/retro` later automates.
 - **Gate:** no unaddressed high-severity findings; the spawned charter reviewers return `CLEAN` or justified.
-
-### Stage 6 — Test (fork by surface)
-**Non-browser verification is mandatory; the browser arm is best-effort and environment-gated — never
-brute-force a local environment to run it.**
-- **DB / CLI / API / logic (always):** `Task(subagent_type="oh-my-claudecode:qa-tester")` (tmux) + the
-  project's unit/integration tests (`make test` / `npm test`). This is the substance of Stage 6.
-- **UI / browser (only if a seeded app stands up cleanly):** a working, seeded app is a *precondition*,
-  not a task. Look up the project's stack command (manifest `run` / `AGENTS.md`). If one exists and comes
-  up in a bounded attempt, drive Chrome via `claude-in-chrome` + `Skill("oh-my-claudecode:visual-verdict")`
-  on the impacted surfaces' real entry points — don't infer "works" from a 200.
-  - **If there's no declared stack, or standing one up needs manual provisioning (DB auth, missing
-    `.env`, no seed script, …): STOP.** Per the browser-automation guidance this is a rabbit hole —
-    don't brute-force env setup. Record the UI arm as `N/A — not runnable locally: <reason>` in the run
-    notes, and either ask the human to do the visual check or defer browser QA to a provisioned env /
-    reviewer. **Never fake a pass.**
-- **Gate:** the mandatory non-browser verification passes AND the browser arm is either done or explicitly
-  recorded `N/A — <reason>`. Do not hard-block the run on an un-standable local environment.
 
 ### Stage 7 — Quality gate (blocking)
 - Run the diff-scoped gate against **this feature's** changes; fix every item it frames; re-run until clean.
