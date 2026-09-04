@@ -12,5 +12,5 @@ The `/ship <feature>` harness — a self-driving, step-enforced feature pipeline
 - **Enforces:** the repo Stop hook (`scripts/quality-gate.sh`) refuses turn-end while a run is
   `active` and its `hardGateMet` is false — so stages can't be skipped.
 
-See `SKILL.md` for the full stage-by-stage runbook (research → grill → spec → implement → review →
-test → gate) and the escape hatches.
+See `SKILL.md` for the full stage-by-stage runbook (research → grill → spec → implement → verify
+locally (iterate) → review → gate) and the escape hatches.
