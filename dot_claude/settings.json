@@ -97,7 +97,7 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "claude-fable-5-1",
+  "model": "opus",
   "hooks": {
     "PostToolUse": [
       {
@@ -186,6 +186,11 @@
     }
   },
   "effortLevel": "xhigh",
+  "modelSettings": {
+    "claude-fable-5-1": {
+      "effortLevel": "high"
+    }
+  },
   "skipDangerousModePermissionPrompt": true,
   "skipWorkflowUsageWarning": true,
   "editorMode": "normal",
@@ -206,11 +211,6 @@
       ],
       "command": "/Users/rebelde/.local/share/uv/tools/repowise/bin/repowise",
       "description": "repowise: codebase intelligence — docs, graph, git signals, dead code, decisions"
-    }
-  },
-  "modelSettings": {
-    "claude-fable-5-1": {
-      "effortLevel": "high"
     }
   }
 }
