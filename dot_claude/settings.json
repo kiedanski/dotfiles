@@ -97,6 +97,7 @@
     ],
     "defaultMode": "auto"
   },
+  "model": "claude-fable-5-1",
   "hooks": {
     "PostToolUse": [
       {
@@ -207,5 +208,9 @@
       "description": "repowise: codebase intelligence — docs, graph, git signals, dead code, decisions"
     }
   },
-  "model": "claude-fable-5-1"
+  "modelSettings": {
+    "claude-fable-5-1": {
+      "effortLevel": "high"
+    }
+  }
 }
